@@ -5,6 +5,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart' as ll;
 import 'package:url_launcher/url_launcher.dart';
 
+import '../services/parking_service.dart';
+
 class LiveLocationScreen extends StatefulWidget {
   const LiveLocationScreen({super.key});
 
@@ -17,11 +19,12 @@ class _LiveLocationScreenState extends State<LiveLocationScreen> {
   bool _loading = true;
   String? _error;
   final MapController _mapController = MapController();
+  List<dynamic> _parkingSpaces = [];
 
   @override
   void initState() {
     super.initState();
-    _fetchLocation();
+    _fetchLocation().then((_) => _fetchParkingSpaces());
   }
 
   Future<void> _fetchLocation() async {
@@ -118,6 +121,19 @@ class _LiveLocationScreenState extends State<LiveLocationScreen> {
     }
   }
 
+  Future<void> _fetchParkingSpaces() async {
+    try {
+      final spaces = await ParkingService.getParkingSpaces();
+      final activeSpaces = spaces.where((s) => s['is_active'] == true).toList();
+      setState(() {
+        _parkingSpaces = activeSpaces;
+      });
+    } catch (e) {
+      // Silently fail for parking spaces, don't block the map
+      debugPrint('Failed to load parking spaces: $e');
+    }
+  }
+
   /// Shows the rationale dialog before the OS permission prompt.
   /// Returns true if the user wants to proceed.
   Future<bool> _showPermissionRationale() async {
@@ -199,6 +215,23 @@ class _LiveLocationScreenState extends State<LiveLocationScreen> {
     return result ?? false;
   }
 
+  ll.LatLng? _parseCoordinatesFromLink(String? link) {
+    if (link == null || link.isEmpty) return null;
+    try {
+      final uri = Uri.parse(link);
+      final q = uri.queryParameters['q'];
+      if (q != null && q.contains(',')) {
+        final parts = q.split(',');
+        final lat = double.parse(parts[0]);
+        final lng = double.parse(parts[1]);
+        return ll.LatLng(lat, lng);
+      }
+    } catch (e) {
+      // Ignore parsing errors
+    }
+    return null;
+  }
+
   Future<void> _showDialog({
     required IconData icon,
     required Color iconColor,
@@ -241,6 +274,63 @@ class _LiveLocationScreenState extends State<LiveLocationScreen> {
     launchUrl(
       Uri.parse('https://www.google.com/maps?q=$lat,$lng'),
       mode: LaunchMode.externalApplication,
+    );
+  }
+
+  void _showParkingSpaceInfo(Map<String, dynamic> space) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF161B22),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          space['name']?.toString() ?? 'Parking Space',
+          style: const TextStyle(color: Colors.white),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Location: ${space['location'] ?? 'N/A'}',
+              style: const TextStyle(color: Colors.white70),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Slots: ${space['total_slots'] ?? 0}',
+              style: const TextStyle(color: Colors.white70),
+            ),
+            if (space['open_time'] != null && space['close_time'] != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Hours: ${space['open_time']} - ${space['close_time']}',
+                style: const TextStyle(color: Colors.white70),
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          if (space['google_map_link'] != null && space['google_map_link'].toString().isNotEmpty)
+            ElevatedButton.icon(
+              icon: const Icon(Icons.directions),
+              label: const Text('Directions'),
+              onPressed: () {
+                Navigator.pop(ctx);
+                launchUrl(
+                  Uri.parse(space['google_map_link'].toString()),
+                  mode: LaunchMode.externalApplication,
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.greenAccent,
+                foregroundColor: Colors.black,
+              ),
+            ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close', style: TextStyle(color: Colors.white54)),
+          ),
+        ],
+      ),
     );
   }
 
@@ -319,6 +409,7 @@ class _LiveLocationScreenState extends State<LiveLocationScreen> {
                         ),
                         MarkerLayer(
                           markers: [
+                            // User location marker
                             Marker(
                               point: _currentLocation!,
                               width: 60,
@@ -344,6 +435,44 @@ class _LiveLocationScreenState extends State<LiveLocationScreen> {
                                 ],
                               ),
                             ),
+                            // Parking space markers
+                            ..._parkingSpaces.map((space) {
+                              final coords = _parseCoordinatesFromLink(space['google_map_link']);
+                              if (coords == null) return null;
+                              return Marker(
+                                point: coords,
+                                width: 50,
+                                height: 50,
+                                child: GestureDetector(
+                                  onTap: () => _showParkingSpaceInfo(space),
+                                  child: Column(
+                                    children: [
+                                      Container(
+                                        width: 16,
+                                        height: 16,
+                                        decoration: BoxDecoration(
+                                          color: Colors.greenAccent,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(color: Colors.white, width: 2),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.greenAccent.withOpacity(0.5),
+                                              blurRadius: 8,
+                                              spreadRadius: 2,
+                                            ),
+                                          ],
+                                        ),
+                                        child: const Icon(
+                                          Icons.local_parking,
+                                          color: Colors.black,
+                                          size: 10,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }).whereType<Marker>(),
                           ],
                         ),
                       ],

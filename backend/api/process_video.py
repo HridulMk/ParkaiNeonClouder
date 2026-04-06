@@ -1,7 +1,6 @@
 import json
 import os
 import datetime
-from collections import Counter
 from typing import Any, Dict, List
 
 import cv2
@@ -22,36 +21,6 @@ def _load_polygons(polygons_path: str) -> List:
     except Exception as e:
         print("❌ Polygon load error:", e)
         return []
-
-
-def _scale_polygons_to_frame(polygons: List, frame_w: int, frame_h: int) -> List:
-    if not polygons:
-        return polygons
-
-    all_x = [p[0] for poly in polygons for p in poly]
-    all_y = [p[1] for poly in polygons for p in poly]
-
-    max_x = max(all_x)
-    max_y = max(all_y)
-
-    # If polygons already appear normalized in [0,1], scale by frame size.
-    if max_x <= 1.0 and max_y <= 1.0:
-        return [
-            [[int(p[0] * frame_w), int(p[1] * frame_h)] for p in poly]
-            for poly in polygons
-        ]
-
-    # If coordinates are already in frame space, just cast to int.
-    if max_x >= frame_w and max_y >= frame_h:
-        return [[[int(p[0]), int(p[1])] for p in poly] for poly in polygons]
-
-    sx = frame_w / max_x if max_x > 0 else 1.0
-    sy = frame_h / max_y if max_y > 0 else 1.0
-
-    return [
-        [[int(p[0] * sx), int(p[1] * sy)] for p in poly]
-        for poly in polygons
-    ]
 
 
 # ── MAIN FUNCTION ─────────────────────────────────────────────
@@ -85,9 +54,8 @@ def process_video(session_id: str, model=None) -> Dict[str, Any]:
     if not os.path.exists(polygons_path):
         return {"success": False, "error": "Polygons not found"}
 
-    # ✅ NEW: Dynamic filename
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_filename = f"output_{session_id}_{timestamp}.mp4"
+    output_filename = f"output_{session_id}_{timestamp}.avi"  # Use .avi for XVID
     output_path = os.path.join(session_dir, output_filename)
 
     print("🎥 Input:", input_path)
@@ -96,38 +64,41 @@ def process_video(session_id: str, model=None) -> Dict[str, Any]:
 
     # ── Load YOLO ─────────────────────────
     if model is None:
-        model_path = os.path.join(os.path.dirname(__file__), 'best.pt')
+        model_path = os.path.join(settings.BASE_DIR, 'parking_lot-main', 'best.pt')
+        if not os.path.exists(model_path):
+            return {"success": False, "error": f"Model file not found at {model_path}"}
         model = YOLO(model_path)
 
     cap = cv2.VideoCapture(input_path)
     if not cap.isOpened():
         return {"success": False, "error": "Cannot open video"}
 
-    frame_w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    frame_h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    frame_w, frame_h = 1020, 500
+    polygons = _load_polygons(polygons_path)
 
-    if frame_w == 0 or frame_h == 0:
-        return {"success": False, "error": "Invalid video dimensions"}
-
-    raw_polygons = _load_polygons(polygons_path)
-    polygons = _scale_polygons_to_frame(raw_polygons, frame_w, frame_h)
-
-    # ✅ MP4 writer using actual frame size and H264-compatible codec if available
-    fourcc = cv2.VideoWriter_fourcc(*'avc1')
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')  # XVID codec for better compatibility
     out = cv2.VideoWriter(output_path, fourcc, 20.0, (frame_w, frame_h))
 
     if not out.isOpened():
+        # Fallback to MJPG if XVID fails
+        output_path = output_path.replace('.avi', '.avi')  # Keep .avi
+        fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+        out = cv2.VideoWriter(output_path, fourcc, 20.0, (frame_w, frame_h))
+
+    if not out.isOpened():
+        # Final fallback to mp4v with .mp4 extension
+        output_path = output_path.replace('.avi', '.mp4')
+        output_filename = output_filename.replace('.avi', '.mp4')
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         out = cv2.VideoWriter(output_path, fourcc, 20.0, (frame_w, frame_h))
 
     if not out.isOpened():
+        cap.release()
         return {"success": False, "error": "VideoWriter failed"}
 
     frame_count = 0
     results = None
-    occupied_counts = []
 
-    # ── PROCESS LOOP ─────────────────────────
     while True:
         ret, frame = cap.read()
         if not ret:
@@ -136,7 +107,7 @@ def process_video(session_id: str, model=None) -> Dict[str, Any]:
         frame_count += 1
         frame = cv2.resize(frame, (frame_w, frame_h))
 
-        # Run detection every 3 frames
+        # Run YOLO every 3rd frame
         if frame_count % 3 == 0:
             results = model.track(frame, persist=True)
 
@@ -147,13 +118,14 @@ def process_video(session_id: str, model=None) -> Dict[str, Any]:
 
         occupied_zones = 0
 
-        # ✅ SAFE detection check
+        # Detection logic
         if results is not None and results[0].boxes is not None:
             boxes = results[0].boxes.xyxy.cpu().numpy().astype(int)
 
             for box in boxes:
                 x1, y1, x2, y2 = box
-                cx, cy = int((x1 + x2) / 2), int((y1 + y2) / 2)
+                cx = int((x1 + x2) / 2)
+                cy = int((y1 + y2) / 2)
 
                 for poly in polygons:
                     pts = np.array(poly, np.int32).reshape((-1, 1, 2))
@@ -164,41 +136,38 @@ def process_video(session_id: str, model=None) -> Dict[str, Any]:
                         occupied_zones += 1
                         break
 
-        occupied_counts.append(occupied_zones)
-
         total_zones = len(polygons)
         free_zones = total_zones - occupied_zones
 
-        cvzone.putTextRect(frame, f'FREE:{free_zones}', (30, 40), 2, 2)
-        cvzone.putTextRect(frame, f'OCC:{occupied_zones}', (30, 140), 2, 2)
+        cvzone.putTextRect(frame, f'FREE: {free_zones}', (30, 40), 2, 2)
+        cvzone.putTextRect(frame, f'OCC: {occupied_zones}', (30, 120), 2, 2)
 
+        # ✅ SAVE FRAME
         out.write(frame)
 
     # ── CLEANUP ─────────────────────────
     cap.release()
     out.release()
 
+    # Verify output file was created
+    if not os.path.exists(output_path):
+        return {"success": False, "error": "Output video file was not created"}
+
+    file_size = os.path.getsize(output_path)
+    if file_size == 0:
+        return {"success": False, "error": "Output video file is empty"}
+
     total_zones = len(polygons)
-
-    final_occupied = (
-        Counter(occupied_counts).most_common(1)[0][0]
-        if occupied_counts else 0
-    )
-
-    final_free = total_zones - final_occupied
-
-    # ✅ Generate URL for frontend
     output_url = f"{settings.MEDIA_URL}parking_uploads/{session_id}/{output_filename}"
 
-
+    print(f"✅ Video processing complete: {output_path} ({file_size} bytes)")
+    print(f"🌐 Output URL: {output_url}")
 
     return {
         "success": True,
-        "occupied": final_occupied,
-        "free": final_free,
+        "occupied": occupied_zones,  # Use final frame count like main.py
+        "free": free_zones,
         "total": total_zones,
         "output_path": output_path,
-        "output_url": output_url   # ⭐ IMPORTANT
+        "output_url": output_url,
     }
-    
- 

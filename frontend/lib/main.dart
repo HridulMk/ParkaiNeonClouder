@@ -9,8 +9,13 @@ import 'screens/vendor_home.dart';
 import 'screens/security_home.dart';
 import 'screens/admin_home.dart';
 import 'screens/cctv_cameras.dart';
+import 'screens/manage_pricing_screen.dart';
 import 'screens/register.dart';
+import 'screens/vendor_register.dart';
+import 'screens/security_register.dart';
 import 'screens/demo_working.dart';
+import 'screens/terms_and_conditions.dart';
+import 'screens/gate_camera.dart';
 import 'services/auth_service.dart';
 
 void main() => runApp(ParkingApp());
@@ -36,8 +41,13 @@ class ParkingApp extends StatelessWidget {
         '/security-home': (ctx) => const SecurityHomeScreen(),
         '/admin-home': (ctx) => const AdminHomeScreen(),
         '/cctv-cameras': (ctx) => const CCTVCamerasScreen(),
+        '/manage-spaces': (ctx) => const ManagePricingScreen(),
         '/register': (ctx) => const RegisterScreen(),
+        '/vendor-register': (ctx) => const VendorRegisterScreen(),
+        '/security-register': (ctx) => const SecurityRegisterScreen(),
         '/demo': (ctx) => const DemoWorkingScreen(),
+        '/gate-camera': (ctx) => const GateCameraScreen(),
+        '/terms-and-conditions': (ctx) => const TermsAndConditionsPage(),
       },
     );
   }

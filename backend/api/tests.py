@@ -227,6 +227,14 @@ class ParkingDeleteApiTestCase(APITestCase):
         self.space.refresh_from_db()
         self.assertEqual(self.space.total_slots, 0)
 
+    def test_admin_can_delete_any_parking_space(self):
+        self.client.force_authenticate(user=self.admin_user)
+        response = self.client.delete(f'/api/spaces/{self.space.id}/delete/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(ParkingSpace.objects.filter(id=self.space.id).exists())
+        self.assertEqual(ParkingSlot.objects.filter(id__in=[self.slot1.id, self.slot2.id]).count(), 0)
+
     def test_admin_can_delete_any_single_slot(self):
         self.client.force_authenticate(user=self.admin_user)
         response = self.client.delete(f'/api/slots/{self.slot1.id}/delete/')
@@ -300,6 +308,108 @@ class ParkingActivationApiTestCase(APITestCase):
 
         response = self.client.post(f'/api/slots/{self.slot.id}/deactivate/')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class VehicleLogApiTestCase(APITestCase):
+    def setUp(self):
+        self.security_user = User.objects.create_user(
+            username='security-logs',
+            email='security-logs@example.com',
+            password='pass12345',
+            user_type='security',
+            is_active=True,
+        )
+        self.vendor = User.objects.create_user(
+            username='vendor-logs',
+            email='vendor-logs@example.com',
+            password='pass12345',
+            user_type='vendor',
+            is_active=True,
+        )
+        self.admin_user = User.objects.create_user(
+            username='admin-logs',
+            email='admin-logs@example.com',
+            password='pass12345',
+            user_type='admin',
+            is_active=True,
+        )
+
+        self.space = ParkingSpace.objects.create(
+            name='Log Space',
+            vendor=self.vendor,
+            address='Log Address',
+            location='Log Location',
+            total_slots=1,
+            is_active=True,
+        )
+        self.security_user.assigned_parking_space = self.space
+        self.security_user.save()
+
+        self.slot = ParkingSlot.objects.create(
+            space=self.space,
+            slot_id='L-001',
+            label='Log Slot',
+            is_active=True,
+        )
+
+    def test_create_vehicle_log(self):
+        from django.utils import timezone
+        self.client.force_authenticate(user=self.security_user)
+        
+        now = timezone.now()
+        payload = {
+            'space': self.space.id,
+            'slot': self.slot.id,
+            'vehicle_number': 'ABC123',
+            'vehicle_type': 'Car',
+            'check_in_time': now.isoformat(),
+        }
+
+        response = self.client.post('/api/vehicle-logs/', payload, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['vehicle_number'], 'ABC123')
+
+    def test_security_can_view_own_space_logs(self):
+        from django.utils import timezone
+        from .models import VehicleLog
+        
+        VehicleLog.objects.create(
+            space=self.space,
+            slot=self.slot,
+            vehicle_number='ABC123',
+            vehicle_type='Car',
+            check_in_time=timezone.now(),
+            user=self.security_user,
+        )
+
+        self.client.force_authenticate(user=self.security_user)
+        response = self.client.get('/api/vehicle-logs/')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Handle both paginated and non-paginated responses
+        data = response.data.get('results', response.data) if isinstance(response.data, dict) else response.data
+        self.assertEqual(len(data), 1)
+
+    def test_admin_can_view_all_logs(self):
+        from django.utils import timezone
+        from .models import VehicleLog
+        
+        VehicleLog.objects.create(
+            space=self.space,
+            slot=self.slot,
+            vehicle_number='ABC123',
+            vehicle_type='Car',
+            check_in_time=timezone.now(),
+            user=self.security_user,
+        )
+
+        self.client.force_authenticate(user=self.admin_user)
+        response = self.client.get('/api/vehicle-logs/')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Handle both paginated and non-paginated responses
+        data = response.data.get('results', response.data) if isinstance(response.data, dict) else response.data
+        self.assertGreater(len(data), 0)
 class CustomerBookingApiTestCase(APITestCase):
     def setUp(self):
         self.customer = User.objects.create_user(

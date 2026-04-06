@@ -13,6 +13,39 @@ class User(AbstractUser):
     ]
     user_type = models.CharField(max_length=20, choices=USER_TYPE_CHOICES, default='customer')
     phone = models.CharField(max_length=15, blank=True)
+    assigned_parking_space = models.ForeignKey(
+        'ParkingSpace',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='security_personnel',
+        help_text='Parking space assigned to security personnel'
+    )
+
+    # Vendor-specific fields
+    address = models.TextField(blank=True, help_text='Vendor address')
+    company_name = models.CharField(max_length=100, blank=True, help_text='Company name for vendors')
+    land_owner_name = models.CharField(max_length=100, blank=True, help_text='Land owner name for vendors')
+
+    # Document uploads for vendor verification
+    land_tax_receipt = models.FileField(
+        upload_to='vendor_documents/land_tax/',
+        null=True,
+        blank=True,
+        help_text='Land tax payment receipt'
+    )
+    license_document = models.FileField(
+        upload_to='vendor_documents/license/',
+        null=True,
+        blank=True,
+        help_text='Business license document'
+    )
+    government_id = models.FileField(
+        upload_to='vendor_documents/gov_id/',
+        null=True,
+        blank=True,
+        help_text='Government issued ID (Aadhaar/Voter ID/Driving License)'
+    )
 
     def __str__(self):
         return f"{self.username} ({self.user_type})"
@@ -84,6 +117,13 @@ class Reservation(models.Model):
     status = models.CharField(max_length=40, choices=STATUS_CHOICES, default=STATUS_PENDING_BOOKING_PAYMENT)
     qr_code = models.TextField(blank=True)
     qr_image = models.ImageField(upload_to=_qr_image_upload_path, blank=True, null=True)
+    vehicle_number = models.CharField(max_length=20, blank=True, help_text='Vehicle registration number')
+    vehicle_type = models.CharField(max_length=20, choices=[
+        ('suv', 'SUV'),
+        ('pickup', 'Pickup'),
+        ('sedan', 'Sedan'),
+        ('hatchback', 'Hatchback'),
+    ], blank=True, help_text='Type of vehicle')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -110,4 +150,25 @@ class CCTVFeed(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.space.name}"
+
+
+class VehicleLog(models.Model):
+    space = models.ForeignKey(ParkingSpace, on_delete=models.CASCADE, related_name='vehicle_logs')
+    slot = models.ForeignKey(ParkingSlot, on_delete=models.SET_NULL, null=True, blank=True, related_name='vehicle_logs')
+    vehicle_number = models.CharField(max_length=20)
+    vehicle_type = models.CharField(max_length=50, blank=True, help_text='e.g., Car, Motorcycle, Truck')
+    check_in_time = models.DateTimeField()
+    check_out_time = models.DateTimeField(null=True, blank=True)
+    duration_minutes = models.PositiveIntegerField(null=True, blank=True, help_text='Duration in minutes')
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='vehicle_logs')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.vehicle_number} at {self.space.name}"
+
+    def save(self, *args, **kwargs):
+        if self.check_out_time and self.check_in_time:
+            delta = self.check_out_time - self.check_in_time
+            self.duration_minutes = int(delta.total_seconds() / 60)
+        super().save(*args, **kwargs)
 

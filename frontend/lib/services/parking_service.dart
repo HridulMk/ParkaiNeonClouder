@@ -42,9 +42,17 @@ class ParkingService {
     }
   }
 
-  static Future<Map<String, dynamic>> reserveSlot({required int spaceId, required int slotId}) async {
+  static Future<Map<String, dynamic>> reserveSlot({
+    required int spaceId, 
+    required int slotId,
+    required String vehicleNumber,
+    required String vehicleType,
+  }) async {
     try {
-      final response = await ApiService.post('spaces/$spaceId/slots/$slotId/book/', auth: true);
+      final response = await ApiService.post('spaces/$spaceId/slots/$slotId/book/', auth: true, body: {
+        'vehicle_number': vehicleNumber,
+        'vehicle_type': vehicleType,
+      });
       return {'success': true, 'reservation': response};
     } catch (e) {
       return {'success': false, 'error': e.toString().replaceFirst('Exception: ', '')};
@@ -167,6 +175,15 @@ class ParkingService {
     }
   }
 
+  static Future<Map<String, dynamic>> deleteParkingSpace(int spaceId) async {
+    try {
+      await ApiService.delete('spaces/$spaceId/delete/');
+      return {'success': true};
+    } catch (e) {
+      return {'success': false, 'error': e.toString().replaceFirst('Exception: ', '')};
+    }
+  }
+
   static Future<Map<String, dynamic>> createParkingSpace({
     required String name,
     required int numberOfSlots,
@@ -226,138 +243,91 @@ class ParkingService {
     }
   }
 
-  static Future<Map<String, dynamic>> processParkingDemoVideo({
-    String? videoPath,
-    List<int>? videoBytes,
-    String? videoFileName,
-    List<List<Offset>>? polygons,
-  }) async {
-    try {
-      final files = <String, MultipartUploadFile>{};
-      final fields = <String, String>{};
-
-      if ((videoBytes != null && videoBytes.isNotEmpty) || (videoPath != null && videoPath.isNotEmpty)) {
-        files['video'] = MultipartUploadFile(
-          filename: videoFileName ?? 'demo_video.mp4',
-          path: videoPath,
-          bytes: videoBytes,
-        );
-      }
-
-      if (polygons != null && polygons.isNotEmpty) {
-        // Serialize polygons to JSON
-        final polygonsJson = polygons.map((polygon) =>
-          polygon.map((offset) => {'x': offset.dx, 'y': offset.dy}).toList()
-        ).toList();
-        fields['polygons'] = jsonEncode(polygonsJson);
-      }
-
-      final response = await ApiService.postMultipart(
-        'parking-lot/process-video/',
-        auth: true,
-        files: files,
-        fields: fields,
-      );
-
-      if (response is Map<String, dynamic>) {
-        return {
-          'success': true,
-          'jobId': response['job_id'],
-          'status': response['status'],
-          'inputVideoUrl': response['input_video_url'],
-        };
-      }
-
-      return {'success': false, 'error': 'Unexpected response from server'};
-    } catch (e) {
-      return {'success': false, 'error': e.toString().replaceFirst('Exception: ', '')};
+ static Future<Map<String, dynamic>> saveVideo({
+  String? videoPath,
+  List<int>? videoBytes,
+  String? videoFileName,
+}) async {
+  try {
+    if ((videoBytes == null || videoBytes.isEmpty) &&
+        (videoPath == null || videoPath.isEmpty)) {
+      return {'success': false, 'error': 'No video selected'};
     }
-  }
 
-  static Future<Map<String, dynamic>> getParkingVideoJobStatus(String jobId) async {
-    try {
-      final response = await ApiService.get(
-        'parking-lot/jobs/$jobId/',
-        auth: true,
+    final files = <String, MultipartUploadFile>{};
+
+    // ✅ SEND ONLY ONE (IMPORTANT)
+    if (videoBytes != null && videoBytes.isNotEmpty) {
+      files['video'] = MultipartUploadFile(
+        filename: videoFileName ?? 'video.mp4',
+        bytes: videoBytes,
       );
-
-      if (response is Map<String, dynamic>) {
-        return {
-          'success': true,
-          'status': response['status'],
-          'inputVideoUrl': response['input_video_url'],
-          'outputVideoUrl': response['output_video_url'],
-          'error': response['error'],
-          'occupied': response['occupied'],
-          'free': response['free'],
-          'total': response['total'],
-          'slots': response['slots'], // ✅ ADD THIS LINE
-        };
-      }
-
-      return {'success': false, 'error': 'Unexpected response from server'};
-    } catch (e) {
-      return {'success': false, 'error': e.toString().replaceFirst('Exception: ', '')};
+    } else if (videoPath != null && videoPath.isNotEmpty) {
+      files['video'] = MultipartUploadFile(
+        filename: videoFileName ?? 'video.mp4',
+        path: videoPath,
+      );
     }
+
+    final response = await ApiService.postMultipart(
+      'parking-lot/save-video/',
+      auth: true,
+      files: files,
+    );
+
+    print("🔥 RESPONSE: $response");
+
+    if (response is Map<String, dynamic> && response['success'] == true) {
+      return {
+        'success': true,
+        'size': response['size'],
+        'session_id': response['session_id']
+      };
+    }
+
+    return {
+      'success': false,
+      'error': response?.toString() ?? 'Unexpected response'
+    };
+  } catch (e) {
+    return {
+      'success': false,
+      'error': e.toString().replaceFirst('Exception: ', '')
+    };
   }
+}
 
   static Future<Map<String, dynamic>> savePolygons(List<List<Offset>> polygons, {
-    String? jobId,
-    String? videoPath,
-    List<int>? videoBytes,
-    String? videoFileName,
+    required String sessionId,
   }) async {
     try {
-      final fields = <String, String>{};
-      final files = <String, MultipartUploadFile>{};
-
-      // Use double values for coordinates, do not round
       final payloadPolygons = polygons
-          .map((List<Offset> poly) => poly
-              .map((Offset p) => [p.dx, p.dy])
-              .toList())
+          .map((poly) => poly.map((p) => [p.dx, p.dy]).toList())
           .toList();
-      fields['polygons'] = jsonEncode(payloadPolygons);
-      if (jobId != null) {
-        fields['job_id'] = jobId;
-      }
-
-      if ((videoBytes != null && videoBytes.isNotEmpty) || (videoPath != null && videoPath.isNotEmpty)) {
-        files['video'] = MultipartUploadFile(
-          filename: videoFileName ?? 'video.mp4',
-          path: videoPath,
-          bytes: videoBytes,
-        );
-      }
-
+      final fields = <String, String>{
+        'session_id': sessionId,
+        'polygons': jsonEncode(payloadPolygons),
+      };
       final response = await ApiService.postMultipart(
         'parking-lot/polygons/',
         auth: true,
         fields: fields,
-        files: files,
       );
-
       if (response is Map<String, dynamic>) {
         return {'success': true, 'polygons': response['polygons']};
       }
-
       return {'success': false, 'error': 'Unexpected response from server'};
     } catch (e) {
       return {'success': false, 'error': e.toString().replaceFirst('Exception: ', '')};
     }
   }
 
-  static Future<Map<String, dynamic>> loadPolygons({String? jobId}) async {
+  static Future<Map<String, dynamic>> loadPolygons({required String sessionId}) async {
     try {
-      String endpoint = 'parking-lot/polygons/';
-      if (jobId != null) {
-        endpoint += '?job_id=$jobId';
-      }
       final response = await ApiService.get(
-        endpoint,
+        'parking-lot/polygons/?session_id=$sessionId',
         auth: true,
       );
-
       if (response is Map<String, dynamic> && response['polygons'] is List) {
         final polygonsData = response['polygons'] as List;
         final polygons = polygonsData
@@ -367,12 +337,81 @@ class ParkingService {
             .toList();
         return {'success': true, 'polygons': polygons};
       }
-
       return {'success': false, 'error': 'Unexpected response from server'};
     } catch (e) {
       return {'success': false, 'error': e.toString().replaceFirst('Exception: ', '')};
     }
   }
+
+  static String _normalizeMediaUrl(String url) {
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+
+    final base = ApiService.baseUrl.replaceFirst('/api', '');
+    return '$base${url.startsWith('/') ? '' : '/'}$url';
+  }
+
+  static Future<Map<String, dynamic>> runAnalysisAndWait(String sessionId) async {
+  try {
+    print("🚀 Running analysis for session: $sessionId");
+
+    final response = await ApiService.post(
+      'parking-lot/run-analysis/',
+      auth: true,
+      body: {'session_id': sessionId},
+      timeout: const Duration(minutes: 5),
+    );
+
+    print("🔥 RAW RESPONSE: $response");
+
+    // ✅ Ensure correct format
+    if (response is! Map<String, dynamic>) {
+      return {
+        'success': false,
+        'error': 'Invalid server response'
+      };
+    }
+
+    // ✅ FIX: correct error key
+    if (response['success'] == false) {
+      return {
+        'success': false,
+        'error': response['error'] ?? 'Server error occurred'
+      };
+    }
+
+    // ✅ Safe parsing
+    var outputUrl = response['output_video_url']?.toString();
+
+    if (outputUrl == null || outputUrl.isEmpty) {
+      return {
+        'success': false,
+        'error': 'Output video not generated'
+      };
+    }
+
+    outputUrl = _normalizeMediaUrl(outputUrl);
+
+    return {
+      'success': true,
+      'outputVideoUrl': outputUrl,
+      'occupied': response['occupied'] ?? 0,
+      'free': response['free'] ?? 0,
+      'total': response['total'] ?? 0,
+    };
+
+  } catch (e) {
+    print("❌ ERROR in runAnalysis: $e");
+
+    return {
+      'success': false,
+      'error': e.toString().replaceFirst('Exception: ', ''),
+    };
+  }
+}
+
+
 
   static Future<List<dynamic>> getUsers() async {
     final response = await ApiService.get('users/', auth: true);
@@ -393,6 +432,46 @@ class ParkingService {
       final endpoint = isActive ? 'spaces/$spaceId/activate/' : 'spaces/$spaceId/deactivate/';
       final response = await ApiService.post(endpoint, auth: true);
       return {'success': true, 'data': response};
+    } catch (e) {
+      return {'success': false, 'error': e.toString().replaceFirst('Exception: ', '')};
+    }
+  }
+
+  static Future<List<dynamic>> getVehicleLogs() async {
+    try {
+      final response = await ApiService.get('vehicle-logs/', auth: true);
+      return _normalizeListResponse(response);
+    } catch (e) {
+      throw Exception('Failed to load vehicle logs: $e');
+    }
+  }
+
+  static Future<Map<String, dynamic>> createVehicleLog({
+    required int spaceId,
+    required String vehicleNumber,
+    String? vehicleType,
+    int? slotId,
+  }) async {
+    try {
+      final body = <String, dynamic>{
+        'space': spaceId,
+        'vehicle_number': vehicleNumber,
+        'check_in_time': DateTime.now().toIso8601String(),
+      };
+      if (vehicleType != null) body['vehicle_type'] = vehicleType;
+      if (slotId != null) body['slot'] = slotId;
+
+      final response = await ApiService.post('vehicle-logs/', auth: true, body: body);
+      return {'success': true, 'log': response};
+    } catch (e) {
+      return {'success': false, 'error': e.toString().replaceFirst('Exception: ', '')};
+    }
+  }
+
+  static Future<Map<String, dynamic>> checkOutVehicle(int logId) async {
+    try {
+      final response = await ApiService.post('vehicle-logs/$logId/check_out/', auth: true);
+      return {'success': true, 'log': response};
     } catch (e) {
       return {'success': false, 'error': e.toString().replaceFirst('Exception: ', '')};
     }

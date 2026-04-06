@@ -2,15 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import '../utils/responsive_utils.dart';
 import '../services/auth_service.dart';
+import '../models/parking_space.dart';
 
-class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+class SecurityRegisterScreen extends StatefulWidget {
+  const SecurityRegisterScreen({super.key});
 
   @override
-  State<RegisterScreen> createState() => _RegisterScreenState();
+  State<SecurityRegisterScreen> createState() => _SecurityRegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen>
+class _SecurityRegisterScreenState extends State<SecurityRegisterScreen>
     with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
@@ -18,11 +19,14 @@ class _RegisterScreenState extends State<RegisterScreen>
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  String _selectedUserType = 'customer';
+
+  int? _selectedParkingSpaceId;
+  List<ParkingSpace> _parkingSpaces = [];
 
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
+  bool _isLoadingSpaces = true;
   bool _acceptTerms = false;
   late AnimationController _animController;
   late Animation<double> _fadeAnimation;
@@ -39,6 +43,7 @@ class _RegisterScreenState extends State<RegisterScreen>
       curve: Curves.easeOutCubic,
     );
     _animController.forward();
+    _loadParkingSpaces();
   }
 
   @override
@@ -52,33 +57,61 @@ class _RegisterScreenState extends State<RegisterScreen>
     super.dispose();
   }
 
+  Future<void> _loadParkingSpaces() async {
+    try {
+      final spaces = await AuthService.getParkingSpacesForSecurity();
+      setState(() {
+        _parkingSpaces = spaces;
+        _isLoadingSpaces = false;
+      });
+    } catch (e) {
+      setState(() => _isLoadingSpaces = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load parking spaces: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
+    if (_selectedParkingSpaceId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a parking space'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     setState(() => _isLoading = true);
 
     try {
-      final result = await AuthService.register(
-        username: _emailController.text.trim(), // Use email as username
+      final result = await AuthService.registerSecurity(
+        username: _emailController.text.trim(),
         email: _emailController.text.trim(),
         fullName: _nameController.text.trim(),
         phone: _phoneController.text.trim(),
-        userType: _selectedUserType,
+        parkingSpaceId: _selectedParkingSpaceId!,
         password: _passwordController.text,
         passwordConfirm: _confirmPasswordController.text,
       );
 
-      debugPrint('Register result: $result');
+      debugPrint('Security register result: $result');
       if (!mounted) return;
 
       if (result['success']) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('Registration successful! Please login.')),
+              content: Text('Security registration successful! Please login.')),
         );
         Navigator.pop(context); // Go back to login
       } else {
-        // Handle validation errors
         String errorMessage = 'Registration failed';
         if (result['errors'] != null && result['errors'] is Map) {
           final errors = result['errors'] as Map<String, dynamic>;
@@ -162,12 +195,9 @@ class _RegisterScreenState extends State<RegisterScreen>
                       size: 20,
                     ),
                     onPressed: () {
-                      // Ensure navigation back to previous screen
                       if (Navigator.canPop(context)) {
                         Navigator.pop(context);
                       } else {
-                        // Fallback: Push to login or home if no route to pop
-                        // Adjust this based on your app's navigation structure
                         Navigator.pushReplacementNamed(context, '/login');
                       }
                     },
@@ -194,7 +224,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                       tablet: 50,
                                       desktop: 60)),
                               Text(
-                                'Create Account',
+                                'Security Registration',
                                 style: TextStyle(
                                   fontSize: titleFontSize,
                                   fontWeight: FontWeight.w700,
@@ -205,7 +235,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'Join us to find the best parking spots',
+                                'Register as security personnel for parking space management',
                                 style: TextStyle(
                                   fontSize: 16,
                                   color: isDark
@@ -260,35 +290,46 @@ class _RegisterScreenState extends State<RegisterScreen>
                                           : null,
                                     ),
                                     const SizedBox(height: 16),
-                                    DropdownButtonFormField<String>(
-                                      initialValue: _selectedUserType,
-                                      items: const [
-                                        DropdownMenuItem(
-                                            value: 'customer',
-                                            child: Text('Customer')),
-                                        DropdownMenuItem(
-                                            value: 'vendor',
-                                            child: Text('Slot Vendor')),
-                                      ],
-                                      onChanged: (val) => setState(
-                                          () => _selectedUserType = val!),
-                                      decoration: InputDecoration(
-                                        labelText: 'I am a...',
-                                        prefixIcon: const Icon(
-                                            Icons.badge_outlined,
-                                            size: 22),
-                                        filled: true,
-                                        fillColor: isDark
-                                            ? Colors.white
-                                                .withValues(alpha: 0.06)
-                                            : Colors.black
-                                                .withValues(alpha: 0.04),
-                                        border: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(16),
-                                            borderSide: BorderSide.none),
+                                    // Parking Space Selection
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: isDark
+                                            ? Colors.white.withValues(alpha: 0.06)
+                                            : Colors.black.withValues(alpha: 0.04),
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                      child: DropdownButtonFormField<int>(
+                                        initialValue: _selectedParkingSpaceId,
+                                        items: _parkingSpaces.map((space) {
+                                          return DropdownMenuItem<int>(
+                                            value: space.id,
+                                            child: Text(
+                                              '${space.name} - ${space.address}',
+                                              style: TextStyle(
+                                                color: isDark ? Colors.white : Colors.black87,
+                                              ),
+                                            ),
+                                          );
+                                        }).toList(),
+                                        onChanged: _isLoadingSpaces
+                                            ? null
+                                            : (val) => setState(() => _selectedParkingSpaceId = val),
+                                        decoration: const InputDecoration(
+                                          labelText: 'Assigned Parking Space',
+                                          prefixIcon: Icon(Icons.location_on_outlined, size: 22),
+                                          border: InputBorder.none,
+                                          contentPadding: EdgeInsets.symmetric(vertical: 18),
+                                        ),
+                                        validator: (v) => v == null ? 'Please select a parking space' : null,
+                                        dropdownColor: isDark ? const Color(0xFF1E293B) : Colors.white,
                                       ),
                                     ),
+                                    if (_isLoadingSpaces)
+                                      const Padding(
+                                        padding: EdgeInsets.all(16.0),
+                                        child: Center(child: CircularProgressIndicator()),
+                                      ),
                                     const SizedBox(height: 16),
                                     _ModernTextField(
                                       controller: _passwordController,
@@ -299,14 +340,11 @@ class _RegisterScreenState extends State<RegisterScreen>
                                         icon: Icon(_obscurePassword
                                             ? Icons.visibility_outlined
                                             : Icons.visibility_off_outlined),
-                                        onPressed: () => setState(() =>
-                                            _obscurePassword =
-                                                !_obscurePassword),
+                                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                                       ),
-                                      validator: (v) =>
-                                          (v != null && v.length < 6)
-                                              ? 'Min 6 characters'
-                                              : null,
+                                      validator: (v) => (v != null && v.length < 6)
+                                          ? 'Min 6 characters'
+                                          : null,
                                     ),
                                     const SizedBox(height: 16),
                                     _ModernTextField(
@@ -318,9 +356,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                         icon: Icon(_obscureConfirmPassword
                                             ? Icons.visibility_outlined
                                             : Icons.visibility_off_outlined),
-                                        onPressed: () => setState(() =>
-                                            _obscureConfirmPassword =
-                                                !_obscureConfirmPassword),
+                                        onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
                                       ),
                                       validator: (v) {
                                         if (v != _passwordController.text)
@@ -404,8 +440,8 @@ class _RegisterScreenState extends State<RegisterScreen>
                                       desktop: 24)),
                               _GradientButton(
                                 isLoading: _isLoading,
-                                onPressed: (_isLoading || !_acceptTerms) ? null : _handleRegister,
-                                label: 'Register',
+                                onPressed: (_isLoading || _isLoadingSpaces || !_acceptTerms) ? null : _handleRegister,
+                                label: 'Register as Security',
                               ),
                               SizedBox(
                                   height: ResponsiveUtils.responsivePadding(
@@ -493,8 +529,7 @@ class _ModernTextField extends StatelessWidget {
         border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
       ),
     );
   }
@@ -522,8 +557,7 @@ class _GradientButton extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color:
-                Theme.of(context).colorScheme.primary.withValues(alpha: 0.35),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.35),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -539,8 +573,7 @@ class _GradientButton extends StatelessWidget {
                 ? const SizedBox(
                     height: 24,
                     width: 24,
-                    child: CircularProgressIndicator(
-                        color: Colors.white, strokeWidth: 2.5))
+                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
                 : Text(label,
                     style: const TextStyle(
                         color: Colors.white,

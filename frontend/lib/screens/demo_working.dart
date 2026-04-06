@@ -1,17 +1,15 @@
-// ignore_for_file: deprecated_member_use, unnecessary_import
-
-import 'dart:io';
-import 'dart:async';
-import 'package:flutter/foundation.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart' as ll;
-import 'package:video_player/video_player.dart';
 import 'dart:ui';
-
-import '../services/auth_service.dart';
-import '../services/parking_service.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:video_player/video_player.dart';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'dart:async';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:parking_app/services/auth_service.dart';
+import 'package:parking_app/services/parking_service.dart';
+import 'package:latlong2/latlong.dart' as ll;
+import 'package:flutter_map/flutter_map.dart';
 
 class DemoWorkingScreen extends StatefulWidget {
   const DemoWorkingScreen({super.key});
@@ -33,13 +31,19 @@ class _DemoWorkingScreenState extends State<DemoWorkingScreen> with SingleTicker
   VideoPlayerController? _processedVideoController;
   String? _processedVideoUrl;
   String? _lastErrorMessage;
-  String? _processingJobId;
+  String? _sessionId;
+  List<bool> _slotStatus = [];
+  bool _spaceCreated = false;
+  int? _createdSpaceId;
+  bool _videoSaved = false;
   bool _isSubmitting = false;
+  bool _isSavingVideo = false;
   bool _isProcessing = false;
+  String _statusLabel = '';
   int _occupiedSlots = 0;
   int _freeSlots = 0;
-  int _processingProgress = 0;
-  Timer? _processingTimer;
+  double _processingProgress = 0;
+  Timer? _fakeProgressTimer;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   final List<List<Offset>> _polygons = [];
@@ -52,7 +56,6 @@ class _DemoWorkingScreenState extends State<DemoWorkingScreen> with SingleTicker
       vsync: this,
     );
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(_animationController);
-    _loadPolygons();
   }
 
   @override
@@ -65,19 +68,9 @@ class _DemoWorkingScreenState extends State<DemoWorkingScreen> with SingleTicker
     _mapController.dispose();
     _videoController?.dispose();
     _processedVideoController?.dispose();
-    _processingTimer?.cancel();
+    _fakeProgressTimer?.cancel();
     _animationController.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadPolygons() async {
-    final result = await ParkingService.loadPolygons();
-    if (result['success'] == true && result['polygons'] != null) {
-      setState(() {
-        _polygons.clear();
-        _polygons.addAll(result['polygons'] as List<List<Offset>>);
-      });
-    }
   }
 
   Future<void> _pickVideo() async {
@@ -89,6 +82,7 @@ class _DemoWorkingScreenState extends State<DemoWorkingScreen> with SingleTicker
         _processedVideoController?.dispose();
         _processedVideoController = null;
         _lastErrorMessage = null;
+        _videoSaved = false;
       });
       if (kIsWeb && _selectedVideo?.bytes != null) {
         final dataUrl = Uri.dataFromBytes(
@@ -108,8 +102,118 @@ class _DemoWorkingScreenState extends State<DemoWorkingScreen> with SingleTicker
     }
   }
 
+  Future<void> _createSpace() async {
+    final isLoggedIn = await AuthService.isLoggedIn();
+    if (!isLoggedIn) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please login as vendor/admin to add a parking space.')),
+      );
+      Navigator.pushNamed(context, '/login');
+      return;
+    }
+
+    final slots = int.tryParse(_slotsController.text.trim());
+    if (_nameController.text.trim().isEmpty ||
+        _locationController.text.trim().isEmpty ||
+        slots == null ||
+        slots <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Fill all required fields before adding the space.')),
+      );
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+
+    final result = await ParkingService.createParkingSpace(
+      name: _nameController.text.trim(),
+      numberOfSlots: slots,
+      location: _locationController.text.trim(),
+      openTime: _openTimeController.text.trim(),
+      closeTime: _closeTimeController.text.trim(),
+      googleMapLink: _mapController.text.trim(),
+    );
+
+    if (!mounted) return;
+    setState(() => _isSubmitting = false);
+
+    if (result['success'] == true) {
+      setState(() {
+        _spaceCreated = true;
+        _createdSpaceId = result['space']?['id'] as int?;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Parking space created! Now upload the CCTV video.')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result['error']?.toString() ?? 'Failed to create parking space')),
+      );
+    }
+  }
+
+ // IMPORTANT
+
+Future<void> _saveVideo() async {
+  print("🔥 Save button clicked");
+
+  if (_selectedVideo == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('⚠️ Please select a video first')),
+    );
+    return;
+  }
+
+  setState(() => _isSavingVideo = true);
+
+  try {
+    final result = await ParkingService.saveVideo(
+      // ✅ KEY FIX
+      videoPath: kIsWeb ? null : _selectedVideo?.path,
+      videoBytes: kIsWeb ? _selectedVideo?.bytes : null,
+      videoFileName: _selectedVideo?.name,
+    );
+
+    print("🔥 API RESULT: $result");
+
+    if (!mounted) return;
+
+    if (result['success'] != true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('❌ ${result['error']}')),
+      );
+      return;
+    }
+
+    setState(() {
+      _videoSaved = true;
+      _sessionId = result['session_id'];
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('✅ Video saved successfully')),
+    );
+
+  } catch (e) {
+    print("🔥 ERROR: $e");
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('❌ Exception: $e')),
+    );
+  }
+
+  setState(() => _isSavingVideo = false);
+}
+
   Future<void> _savePolygons() async {
-    final result = await ParkingService.savePolygons(_polygons);
+    if (_sessionId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please save the video first.')),
+      );
+      return;
+    }
+    final result = await ParkingService.savePolygons(_polygons, sessionId: _sessionId!);
     if (!mounted) return;
     if (result['success'] == true) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -122,184 +226,162 @@ class _DemoWorkingScreenState extends State<DemoWorkingScreen> with SingleTicker
     }
   }
 
-  Future<void> _submitDemo() async {
-    final isLoggedIn = await AuthService.isLoggedIn();
-    if (!isLoggedIn) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please login as vendor/admin to upload CCTV demo.')),
-      );
-      Navigator.pushNamed(context, '/login');
-      return;
-    }
-
-    final slots = int.tryParse(_slotsController.text.trim());
-    if (_nameController.text.trim().isEmpty ||
-        _locationController.text.trim().isEmpty ||
-        slots == null ||
-        slots <= 0 ||
-        _selectedVideo == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Fill all required fields and select a CCTV video.')),
-      );
-      return;
-    }
-
-    setState(() {
-      _isSubmitting = true;
-      _isProcessing = true;
-      _processingProgress = 0;
-      _lastErrorMessage = null;
-      _processingJobId = null;
-    });
-
-    final result = await ParkingService.createParkingSpace(
-      name: _nameController.text.trim(),
-      numberOfSlots: slots,
-      location: _locationController.text.trim(),
-      openTime: _openTimeController.text.trim(),
-      closeTime: _closeTimeController.text.trim(),
-      googleMapLink: _mapController.text.trim(),
-      cctvVideoPath: _selectedVideo?.path,
-      cctvVideoBytes: _selectedVideo?.bytes,
-      cctvVideoFileName: _selectedVideo?.name,
+Future<void> _submitDemo() async {
+  if (!_spaceCreated) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Please add a parking space first.')),
     );
+    return;
+  }
+
+  if (_sessionId == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Please save the video and polygons first.')),
+    );
+    return;
+  }
+
+  print("🚀 Starting analysis for session: $_sessionId");
+
+  setState(() {
+    _isSubmitting = true;
+    _isProcessing = true;
+    _processingProgress = 0;
+    _statusLabel = 'Starting AI analysis...';
+    _lastErrorMessage = null;
+  });
+
+  try {
+    final jobFuture = ParkingService.runAnalysisAndWait(_sessionId!);
+
+    // 🔥 Fake progress (safe)
+    final stages = [
+      {'label': 'Initializing YOLO model...', 'target': 0.15, 'ms': 800},
+      {'label': 'Loading video frames...', 'target': 0.30, 'ms': 700},
+      {'label': 'Detecting vehicles...', 'target': 0.50, 'ms': 1200},
+      {'label': 'Analyzing parking zones...', 'target': 0.68, 'ms': 1000},
+      {'label': 'Counting occupancy...', 'target': 0.82, 'ms': 900},
+      {'label': 'Generating output video...', 'target': 0.93, 'ms': 800},
+      {'label': 'Finalizing results...', 'target': 0.98, 'ms': 600},
+    ];
+
+    for (final stage in stages) {
+      if (!mounted || !_isProcessing) break;
+
+      final label = stage['label'] as String;
+      final target = stage['target'] as double;
+      final ms = stage['ms'] as int;
+
+      setState(() => _statusLabel = label);
+
+      const steps = 20;
+      final stepMs = ms ~/ steps;
+      final start = _processingProgress;
+
+      for (int i = 1; i <= steps; i++) {
+        await Future.delayed(Duration(milliseconds: stepMs));
+
+        if (!mounted || !_isProcessing) break;
+
+        setState(() {
+          _processingProgress = start + (target - start) * (i / steps);
+        });
+      }
+    }
+
+    // 🔥 Wait for backend result
+    final result = await jobFuture;
+
+    print("🔥 ANALYSIS RESULT: $result");
 
     if (!mounted) return;
 
-    if (result['success'] == true) {
-      // After creating the space, send the video to the parking_lot-main backend for processing (background job).
-      final processingInitResult = await ParkingService.processParkingDemoVideo(
-        videoPath: _selectedVideo?.path,
-        videoBytes: _selectedVideo?.bytes,
-        videoFileName: _selectedVideo?.name,
-      );
+    // ❌ ERROR CASE
+    if (result['success'] != true) {
+      throw Exception(result['error'] ?? 'Analysis failed');
+    }
 
-      if (processingInitResult['success'] == true && processingInitResult['jobId'] != null) {
-        _processingJobId = processingInitResult['jobId'] as String;
+    setState(() => _processingProgress = 1.0);
+    await Future.delayed(const Duration(milliseconds: 300));
 
-        // Save polygons with job_id
-        final savePolygonsResult = await ParkingService.savePolygons(_polygons, jobId: _processingJobId);
-        if (savePolygonsResult['success'] != true) {
-          setState(() {
-            _isSubmitting = false;
-            _isProcessing = false;
-            _processingProgress = 0;
-            _lastErrorMessage = savePolygonsResult['error']?.toString() ?? 'Failed to save polygons';
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(_lastErrorMessage!)),
-          );
-          return;
+    if (!mounted) return;
+
+    final outputUrl = result['outputVideoUrl'] as String?;
+
+    VideoPlayerController? newController;
+
+    if (outputUrl != null && outputUrl.isNotEmpty) {
+      _processedVideoUrl = outputUrl;
+
+      try {
+        print("🎥 Loading video: $outputUrl");
+
+        newController = VideoPlayerController.networkUrl(Uri.parse(outputUrl));
+        await newController.initialize();
+
+        print("✅ Video loaded successfully");
+
+      } catch (e) {
+        print("❌ Video load failed: $e");
+
+        // Show more detailed error
+        String errorMsg = 'Video generated but failed to load in app';
+        if (e.toString().contains('Format')) {
+          errorMsg += ' (unsupported video format)';
+        } else if (e.toString().contains('Network')) {
+          errorMsg += ' (network error)';
         }
 
-        _processingTimer?.cancel();
-        _processingTimer = Timer.periodic(const Duration(seconds: 2), (timer) async {
-          if (!_isProcessing || _processingJobId == null) {
-            timer.cancel();
-            return;
-          }
-
-          final statusResult = await ParkingService.getParkingVideoJobStatus(_processingJobId!);
-          if (!mounted) return;
-
-          if (statusResult['success'] != true) {
-            setState(() {
-              _isProcessing = false;
-              _isSubmitting = false;
-              _lastErrorMessage = statusResult['error']?.toString() ?? 'Failed to check processing status';
-              _processingProgress = 0;
-            });
-            timer.cancel();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(_lastErrorMessage!)),
-            );
-            return;
-          }
-
-          final status = (statusResult['status'] as String?) ?? 'queued';
-
-          setState(() {
-            if (status == 'queued') {
-              _processingProgress = 10;
-            } else if (status == 'running') {
-              _processingProgress = 60;
-            } else if (status == 'completed') {
-              _processingProgress = 100;
-            } else if (status == 'failed') {
-              _processingProgress = 0;
-            }
-          });
-
-          if (status == 'completed') {
-            final outputUrl = statusResult['outputVideoUrl'] as String?;
-            if (outputUrl != null && outputUrl.isNotEmpty) {
-              _processedVideoUrl = outputUrl;
-              _processedVideoController = VideoPlayerController.networkUrl(Uri.parse(outputUrl));
-              await _processedVideoController!.initialize();
-            }
-
-            // Simulate AI results - in real app, parse from backend response if available
-            // final totalSlots = slots;
-            // _occupiedSlots = (totalSlots * 0.6).round();
-            // _freeSlots = totalSlots - _occupiedSlots;
-            final occupied = statusResult['occupied'] ?? 0;
-final free = statusResult['free'] ?? 0;
-
-_occupiedSlots = occupied;
-_freeSlots = free;
-final slotData = statusResult['slots'] ?? [];
-List<bool> slotStatus = [];
-
-for (var s in slotData) {
-  slotStatus.add(s['occupied'] == true);
-}
-
-            setState(() {
-              _isProcessing = false;
-              _isSubmitting = false;
-            });
-            timer.cancel();
-
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Demo processed successfully!')),
-            );
-          } else if (status == 'failed') {
-            setState(() {
-              _isProcessing = false;
-              _isSubmitting = false;
-              _lastErrorMessage = statusResult['error']?.toString() ?? 'Video processing failed';
-            });
-            timer.cancel();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(_lastErrorMessage!)),
-            );
-          }
-        });
-      } else {
-        setState(() {
-          _isSubmitting = false;
-          _isProcessing = false;
-          _processingProgress = 0;
-          _lastErrorMessage = processingInitResult['error']?.toString() ?? 'Failed to start video processing';
-        });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_lastErrorMessage!)),
+          SnackBar(content: Text(errorMsg)),
         );
       }
     } else {
-      setState(() {
-        _isSubmitting = false;
-        _isProcessing = false;
-        _processingProgress = 0;
-        _processingTimer?.cancel();
-        _lastErrorMessage = result['error']?.toString() ?? 'Demo upload failed';
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_lastErrorMessage!)),
-      );
+      throw Exception("No output video URL received");
     }
+
+    if (!mounted) return;
+
+    final occupied = result['occupied'] ?? 0;
+    final free = result['free'] ?? 0;
+    final total = result['total'] ?? 0;
+
+    setState(() {
+      _isProcessing = false;
+      _isSubmitting = false;
+      _statusLabel = '';
+      _occupiedSlots = occupied;
+      _freeSlots = free;
+      _slotStatus = List.generate(total, (i) => i < occupied);
+
+      if (newController != null) {
+        _processedVideoController?.dispose();
+        _processedVideoController = newController;
+      }
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('✅ AI analysis complete!')),
+    );
+
+  } catch (e) {
+    print("❌ ERROR in submitDemo: $e");
+
+    if (!mounted) return;
+
+    setState(() {
+      _isSubmitting = false;
+      _isProcessing = false;
+      _processingProgress = 0;
+      _statusLabel = '';
+      _lastErrorMessage = e.toString().replaceFirst('Exception: ', '');
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('❌ ${_lastErrorMessage!}')),
+    );
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -349,9 +431,12 @@ for (var s in slotData) {
                       _buildIntroCard(),
                       const SizedBox(height: 24),
                       _buildFormCard(),
+                      const SizedBox(height: 16),
+                      _buildAddSpaceButton(),
                       const SizedBox(height: 24),
                       _buildVideoUploadSection(),
                       if (_selectedVideo != null) _buildVideoPreview(),
+                      if (_selectedVideo != null) _buildSaveVideoButton(),
                       if (_selectedVideo != null) ...[
                         const SizedBox(height: 24),
                         const Text(
@@ -367,13 +452,12 @@ for (var s in slotData) {
                         const SizedBox(height: 16),
                         _buildSavePolygonsButton(),
                       ],
-                      if (_processedVideoController != null && _processedVideoController!.value.isInitialized)
-                        const SizedBox(height: 24),
-                      if (_processedVideoController != null && _processedVideoController!.value.isInitialized)
-                        _buildProcessedVideoPlayer(),
                       const SizedBox(height: 24),
                       _buildSubmitButton(),
-                      if (_occupiedSlots > 0 || _freeSlots > 0) _buildResultsCard(),
+                      if (_processedVideoUrl != null || _processedVideoController != null)
+                        const SizedBox(height: 24),
+                      if (_processedVideoUrl != null || _processedVideoController != null)
+                        _buildResultsCard(),
                     ],
                   ),
                 ),
@@ -435,13 +519,21 @@ for (var s in slotData) {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Parking Space Details',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
+          Row(
+            children: [
+              const Text(
+                'Parking Space Details',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              if (_spaceCreated) ...[
+                const SizedBox(width: 8),
+                Icon(Icons.lock, color: Colors.white38, size: 16),
+              ],
+            ],
           ),
           const SizedBox(height: 16),
           _buildTextField(_nameController, 'Parking Space Name', Icons.local_parking),
@@ -516,7 +608,8 @@ for (var s in slotData) {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
-      style: const TextStyle(color: Colors.white),
+      enabled: !_spaceCreated,
+      style: TextStyle(color: _spaceCreated ? Colors.white38 : Colors.white),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
@@ -536,62 +629,77 @@ for (var s in slotData) {
   }
 
   Widget _buildVideoUploadSection() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        color: Colors.white.withOpacity(0.05),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
-      ),
-      child: Column(
-        children: [
-          Icon(Icons.videocam, color: Colors.cyan[400], size: 48),
-          const SizedBox(height: 12),
-          const Text(
-            'Upload CCTV Video',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
+    return Opacity(
+      opacity: _spaceCreated ? 1.0 : 0.4,
+      child: AbsorbPointer(
+        absorbing: !_spaceCreated,
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            color: Colors.white.withOpacity(0.05),
+            border: Border.all(color: Colors.white.withOpacity(0.1)),
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Select a video file to analyze parking occupancy',
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.7),
-              fontSize: 14,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 20),
-          if (_selectedVideo != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8.0),
-              child: Text(
-                'Selected file: ${_selectedVideo!.name}',
-                style: const TextStyle(
+          child: Column(
+            children: [
+              Icon(Icons.videocam, color: Colors.cyan[400], size: 48),
+              const SizedBox(height: 12),
+              const Text(
+                'Upload CCTV Video',
+                style: TextStyle(
                   color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Select a video file to analyze parking occupancy',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.7),
                   fontSize: 14,
-                  fontWeight: FontWeight.w500,
                 ),
                 textAlign: TextAlign.center,
               ),
-            ),
-          ElevatedButton.icon(
-            onPressed: _pickVideo,
-            icon: const Icon(Icons.upload_file),
-            label: const Text('Choose Video'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.cyan[600],
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+              const SizedBox(height: 20),
+              if (_selectedVideo != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: Text(
+                    'Selected file: ${_selectedVideo!.name}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ElevatedButton.icon(
+                onPressed: _pickVideo,
+                icon: const Icon(Icons.upload_file),
+                label: const Text('Choose Video'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.cyan[600],
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
               ),
-            ),
+              if (!_spaceCreated)
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Text(
+                    'Add a parking space first to enable video upload',
+                    style: TextStyle(color: Colors.white38, fontSize: 12),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -688,16 +796,7 @@ for (var s in slotData) {
             ],
           ),
           const SizedBox(height: 12),
-          if (_processedVideoUrl != null)
-            Text(
-              _processedVideoUrl!,
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.6),
-                fontSize: 12,
-              ),
-            ),
-          const SizedBox(height: 12),
-          if (_processedVideoController != null && _processedVideoController!.value.isInitialized)
+          if (_processedVideoController != null && _processedVideoController!.value.isInitialized) ...[
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: AspectRatio(
@@ -705,7 +804,6 @@ for (var s in slotData) {
                 child: VideoPlayer(_processedVideoController!),
               ),
             ),
-          if (_processedVideoController != null && _processedVideoController!.value.isInitialized)
             Padding(
               padding: const EdgeInsets.only(top: 12),
               child: Row(
@@ -738,7 +836,187 @@ for (var s in slotData) {
                 ],
               ),
             ),
+          ] else if (_processedVideoUrl != null) ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.greenAccent.withOpacity(0.4)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'AI processing complete! Video generated successfully.',
+                    style: TextStyle(color: Colors.white70, fontSize: 13),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () async {
+                            // Try to load video again
+                            try {
+                              final controller = VideoPlayerController.networkUrl(Uri.parse(_processedVideoUrl!));
+                              await controller.initialize();
+                              setState(() {
+                                _processedVideoController?.dispose();
+                                _processedVideoController = controller;
+                              });
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Failed to load video: $e')),
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Try Load Video'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.cyan[600],
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () async {
+                            if (_processedVideoUrl != null) {
+                              final uri = Uri.parse(_processedVideoUrl!);
+                              if (await canLaunchUrl(uri)) {
+                                await launchUrl(uri, mode: LaunchMode.externalApplication);
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Could not open video')),
+                                );
+                              }
+                            }
+                          },
+                          icon: const Icon(Icons.open_in_browser),
+                          label: const Text('Open Video'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange[600],
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Video URL:',
+                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                  const SizedBox(height: 4),
+                  SelectableText(
+                    _processedVideoUrl!,
+                    style: const TextStyle(color: Colors.cyanAccent, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildSaveVideoButton() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: SizedBox(
+        width: double.infinity,
+        child: _videoSaved
+            ? Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.green.withOpacity(0.15),
+                  border: Border.all(color: Colors.greenAccent.withOpacity(0.4)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.check_circle, color: Colors.greenAccent, size: 20),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Text(
+                        'Video saved to server!',
+                        style: TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => setState(() => _videoSaved = false),
+                      child: const Text('Re-save', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                    ),
+                  ],
+                ),
+              )
+            : ElevatedButton.icon(
+                onPressed: _isSavingVideo ? null : _saveVideo,
+                icon: _isSavingVideo
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Icon(Icons.save_alt),
+                label: Text(_isSavingVideo ? 'Saving...' : 'Save Video'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.purple[600],
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildAddSpaceButton() {
+    if (_spaceCreated) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          color: Colors.green.withOpacity(0.15),
+          border: Border.all(color: Colors.greenAccent.withOpacity(0.4)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.greenAccent, size: 20),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Text(
+                'Parking space created successfully!',
+                style: TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.w600),
+              ),
+            ),
+            TextButton(
+              onPressed: () => setState(() {
+                _spaceCreated = false;
+                _createdSpaceId = null;
+              }),
+              child: const Text('Edit', style: TextStyle(color: Colors.white70, fontSize: 12)),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: _isSubmitting ? null : _createSpace,
+        icon: _isSubmitting
+            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+            : const Icon(Icons.add_business),
+        label: Text(_isSubmitting ? 'Creating...' : 'Add Parking Space'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.blue[700],
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ),
       ),
     );
   }
@@ -764,116 +1042,153 @@ for (var s in slotData) {
   }
 
   Widget _buildSubmitButton() {
-    return SizedBox(
-      width: double.infinity,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          ElevatedButton.icon(
-            onPressed: (_isSubmitting || _isProcessing) ? null : _submitDemo,
-            icon: _isProcessing ? const SizedBox.shrink() : const Icon(Icons.play_arrow),
-            label: _isProcessing
-                ? const Text('Processing with AI...')
-                : Text(_isSubmitting ? 'Uploading...' : 'Run AI Analysis'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green[600],
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+  final isDisabled = _isSubmitting || _isProcessing || _sessionId == null;
+
+  return SizedBox(
+    width: double.infinity,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ElevatedButton.icon(
+          onPressed: isDisabled ? null : _submitDemo,
+          icon: _isProcessing
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Icon(Icons.play_arrow),
+          label: _isProcessing
+              ? const Text('Processing with AI...')
+              : Text(_isSubmitting ? 'Starting...' : 'Run AI Analysis'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green[600],
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+        ),
+
+        // 🔥 Processing UI
+        if (_isProcessing) ...[
+          const SizedBox(height: 12),
+
+          Text(
+            '$_statusLabel  ${(_processingProgress * 100).toInt()}%',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.9),
+              fontSize: 13,
             ),
           ),
-          if (_isProcessing) ...[
-            const SizedBox(height: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+
+          const SizedBox(height: 6),
+
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: _processingProgress.clamp(0.0, 1.0),
+              backgroundColor: Colors.white24,
+              valueColor: const AlwaysStoppedAnimation<Color>(Colors.cyan),
+              minHeight: 6,
+            ),
+          ),
+        ],
+
+        // 🔥 ERROR UI (Improved)
+        if (_lastErrorMessage != null && !_isProcessing) ...[
+          const SizedBox(height: 12),
+
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.red.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.redAccent.withOpacity(0.4)),
+            ),
+            child: Row(
               children: [
-                Text(
-                  'Processing video... $_processingProgress%',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
-                    fontSize: 13,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: LinearProgressIndicator(
-                    value: _processingProgress.clamp(0, 100) / 100.0,
-                    backgroundColor: Colors.white24,
-                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.cyan),
-                    minHeight: 6,
+                const Icon(Icons.error_outline, color: Colors.redAccent, size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _lastErrorMessage!,
+                    style: const TextStyle(
+                      color: Colors.redAccent,
+                      fontSize: 13,
+                    ),
                   ),
                 ),
               ],
             ),
-          ],
-          if (_lastErrorMessage != null && !_isProcessing) ...[
-            const SizedBox(height: 12),
-            Text(
-              _lastErrorMessage!,
-              style: const TextStyle(
-                color: Colors.redAccent,
-                fontSize: 13,
+          ),
+        ],
+      ],
+    ),
+  );
+}
+
+Widget _buildResultsCard() {
+  return Container(
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(16),
+      color: Colors.white.withOpacity(0.1),
+      border: Border.all(color: Colors.white.withOpacity(0.2)),
+    ),
+    child: Column(
+      children: [
+        Row(
+          children: [
+            Icon(Icons.movie_filter, color: Colors.cyan[400], size: 28),
+            const SizedBox(width: 12),
+            const Text(
+              'AI Analysis Results',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ],
-        ],
-      ),
-    );
-  }
+        ),
 
-  Widget _buildResultsCard() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        color: Colors.white.withOpacity(0.1),
-        border: Border.all(color: Colors.white.withOpacity(0.2)),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Icon(Icons.analytics, color: Colors.green[400], size: 28),
-              const SizedBox(width: 12),
-              const Text(
-                'AI Analysis Results',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
+        const SizedBox(height: 20),
+
+        if (_processedVideoController != null && _processedVideoController!.value.isInitialized)
+          _buildProcessedVideoPlayer()
+        else if (_processedVideoUrl != null)
+          _buildProcessedVideoPlayer()
+        else
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              color: Colors.white.withOpacity(0.05),
+            ),
+            child: const Text(
+              'Processed video output will appear here after AI analysis completes.',
+              style: TextStyle(color: Colors.white70, fontSize: 14),
+            ),
           ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: _buildResultItem('Occupied Slots', _occupiedSlots, Colors.red[400]!),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildResultItem('Free Slots', _freeSlots, Colors.green[400]!),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+      ],
+    ),
+  );
+}
 
   Widget _buildPolygonEditor() {
     final width = MediaQuery.of(context).size.width - 40;
-    const height = 220.0;
 
     if (_videoController == null || !_videoController!.value.isInitialized) {
       return Container(
         width: width,
-        height: height,
+        height: 220,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
@@ -887,22 +1202,22 @@ for (var s in slotData) {
       );
     }
 
+    final videoSize = _videoController!.value.size;
+    final displayHeight = width / videoSize.width * videoSize.height;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
           width: width,
-          height: height,
+          height: displayHeight,
           child: PolygonEditor(
             polygons: _polygons,
+            slotStatus: _slotStatus,
             onChanged: (polys) => setState(() {}),
-            background: FittedBox(
-              fit: BoxFit.cover,
-              child: SizedBox(
-                width: _videoController!.value.size.width,
-                height: _videoController!.value.size.height,
-                child: VideoPlayer(_videoController!),
-              ),
+            background: AspectRatio(
+              aspectRatio: _videoController!.value.aspectRatio,
+              child: VideoPlayer(_videoController!),
             ),
           ),
         ),
@@ -1069,13 +1384,14 @@ class PolygonEditor extends StatefulWidget {
   final List<List<Offset>> polygons;
   final ValueChanged<List<List<Offset>>> onChanged;
   final Widget background;
+  final List<bool> slotStatus;
 
   const PolygonEditor({
     super.key,
     required this.polygons,
     required this.onChanged,
     required this.background,
-    
+    this.slotStatus = const [],
   });
 
   @override
@@ -1136,10 +1452,10 @@ class _PolygonEditorState extends State<PolygonEditor> {
                     widget.background,
                     CustomPaint(
                       painter: _PolygonPainter(
-  polygons: _polygons,
-  currentPolygon: _currentPolygon,
-  slotStatus: [], // empty while editing
-),
+                        polygons: _polygons,
+                        currentPolygon: _currentPolygon,
+                        slotStatus: widget.slotStatus,
+                      ),
                     ),
                   ],
                 ),
@@ -1265,6 +1581,8 @@ textPainter.paint(canvas, offset);
 
   @override
   bool shouldRepaint(covariant _PolygonPainter oldDelegate) {
-    return oldDelegate.polygons != polygons || oldDelegate.currentPolygon != currentPolygon;
+    return oldDelegate.polygons != polygons ||
+        oldDelegate.currentPolygon != currentPolygon ||
+        oldDelegate.slotStatus != slotStatus;
   }
 }

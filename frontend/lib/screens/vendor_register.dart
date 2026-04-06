@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/gestures.dart';
 import '../utils/responsive_utils.dart';
 import '../services/auth_service.dart';
 
-class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+class VendorRegisterScreen extends StatefulWidget {
+  const VendorRegisterScreen({super.key});
 
   @override
-  State<RegisterScreen> createState() => _RegisterScreenState();
+  State<VendorRegisterScreen> createState() => _VendorRegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen>
+class _VendorRegisterScreenState extends State<VendorRegisterScreen>
     with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
@@ -18,7 +20,9 @@ class _RegisterScreenState extends State<RegisterScreen>
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  String _selectedUserType = 'customer';
+  final _addressController = TextEditingController();
+  final _companyNameController = TextEditingController();
+  final _landOwnerNameController = TextEditingController();
 
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
@@ -26,6 +30,11 @@ class _RegisterScreenState extends State<RegisterScreen>
   bool _acceptTerms = false;
   late AnimationController _animController;
   late Animation<double> _fadeAnimation;
+
+  // File variables for document uploads
+  File? _landTaxReceipt;
+  File? _licenseDocument;
+  File? _governmentId;
 
   @override
   void initState() {
@@ -48,8 +57,42 @@ class _RegisterScreenState extends State<RegisterScreen>
     _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _addressController.dispose();
+    _companyNameController.dispose();
+    _landOwnerNameController.dispose();
     _animController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickFile(String documentType) async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+        allowMultiple: false,
+      );
+
+      if (result != null) {
+        File file = File(result.files.single.path!);
+        setState(() {
+          switch (documentType) {
+            case 'land_tax':
+              _landTaxReceipt = file;
+              break;
+            case 'license':
+              _licenseDocument = file;
+              break;
+            case 'gov_id':
+              _governmentId = file;
+              break;
+          }
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error picking file: $e')),
+      );
+    }
   }
 
   Future<void> _handleRegister() async {
@@ -58,27 +101,31 @@ class _RegisterScreenState extends State<RegisterScreen>
     setState(() => _isLoading = true);
 
     try {
-      final result = await AuthService.register(
-        username: _emailController.text.trim(), // Use email as username
+      final result = await AuthService.registerVendor(
+        username: _emailController.text.trim(),
         email: _emailController.text.trim(),
         fullName: _nameController.text.trim(),
         phone: _phoneController.text.trim(),
-        userType: _selectedUserType,
+        address: _addressController.text.trim(),
+        companyName: _companyNameController.text.trim(),
+        landOwnerName: _landOwnerNameController.text.trim(),
         password: _passwordController.text,
         passwordConfirm: _confirmPasswordController.text,
+        landTaxReceipt: _landTaxReceipt,
+        licenseDocument: _licenseDocument,
+        governmentId: _governmentId,
       );
 
-      debugPrint('Register result: $result');
+      debugPrint('Vendor register result: $result');
       if (!mounted) return;
 
       if (result['success']) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content: Text('Registration successful! Please login.')),
+              content: Text('Vendor registration successful! Please wait for admin approval.')),
         );
         Navigator.pop(context); // Go back to login
       } else {
-        // Handle validation errors
         String errorMessage = 'Registration failed';
         if (result['errors'] != null && result['errors'] is Map) {
           final errors = result['errors'] as Map<String, dynamic>;
@@ -162,12 +209,9 @@ class _RegisterScreenState extends State<RegisterScreen>
                       size: 20,
                     ),
                     onPressed: () {
-                      // Ensure navigation back to previous screen
                       if (Navigator.canPop(context)) {
                         Navigator.pop(context);
                       } else {
-                        // Fallback: Push to login or home if no route to pop
-                        // Adjust this based on your app's navigation structure
                         Navigator.pushReplacementNamed(context, '/login');
                       }
                     },
@@ -194,7 +238,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                       tablet: 50,
                                       desktop: 60)),
                               Text(
-                                'Create Account',
+                                'Vendor Registration',
                                 style: TextStyle(
                                   fontSize: titleFontSize,
                                   fontWeight: FontWeight.w700,
@@ -205,7 +249,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'Join us to find the best parking spots',
+                                'Register as a parking space vendor',
                                 style: TextStyle(
                                   fontSize: 16,
                                   color: isDark
@@ -260,34 +304,68 @@ class _RegisterScreenState extends State<RegisterScreen>
                                           : null,
                                     ),
                                     const SizedBox(height: 16),
-                                    DropdownButtonFormField<String>(
-                                      initialValue: _selectedUserType,
-                                      items: const [
-                                        DropdownMenuItem(
-                                            value: 'customer',
-                                            child: Text('Customer')),
-                                        DropdownMenuItem(
-                                            value: 'vendor',
-                                            child: Text('Slot Vendor')),
-                                      ],
-                                      onChanged: (val) => setState(
-                                          () => _selectedUserType = val!),
-                                      decoration: InputDecoration(
-                                        labelText: 'I am a...',
-                                        prefixIcon: const Icon(
-                                            Icons.badge_outlined,
-                                            size: 22),
-                                        filled: true,
-                                        fillColor: isDark
-                                            ? Colors.white
-                                                .withValues(alpha: 0.06)
-                                            : Colors.black
-                                                .withValues(alpha: 0.04),
-                                        border: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(16),
-                                            borderSide: BorderSide.none),
+                                    _ModernTextField(
+                                      controller: _companyNameController,
+                                      label: 'Company Name',
+                                      prefixIcon: Icons.business_outlined,
+                                      validator: (v) => v?.isEmpty == true
+                                          ? 'Required'
+                                          : null,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    _ModernTextField(
+                                      controller: _addressController,
+                                      label: 'Business Address',
+                                      prefixIcon: Icons.location_on_outlined,
+                                      maxLines: 3,
+                                      validator: (v) => v?.isEmpty == true
+                                          ? 'Required'
+                                          : null,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    _ModernTextField(
+                                      controller: _landOwnerNameController,
+                                      label: 'Land Owner Name',
+                                      prefixIcon: Icons.person_pin_outlined,
+                                      validator: (v) => v?.isEmpty == true
+                                          ? 'Required'
+                                          : null,
+                                    ),
+                                    const SizedBox(height: 24),
+                                    const Text(
+                                      'Document Verification',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600,
                                       ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    _DocumentUploadWidget(
+                                      title: 'Land Tax Payment Receipt',
+                                      file: _landTaxReceipt,
+                                      onPickFile: () => _pickFile('land_tax'),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    _DocumentUploadWidget(
+                                      title: 'Business License Document',
+                                      file: _licenseDocument,
+                                      onPickFile: () => _pickFile('license'),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    _DocumentUploadWidget(
+                                      title: 'Government ID (Aadhaar/Voter ID/Driving License)',
+                                      file: _governmentId,
+                                      onPickFile: () => _pickFile('gov_id'),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Please upload clear, readable documents for verification. All documents are required for account approval.',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey[600],
+                                        fontStyle: FontStyle.italic,
+                                      ),
+                                      textAlign: TextAlign.center,
                                     ),
                                     const SizedBox(height: 16),
                                     _ModernTextField(
@@ -299,14 +377,11 @@ class _RegisterScreenState extends State<RegisterScreen>
                                         icon: Icon(_obscurePassword
                                             ? Icons.visibility_outlined
                                             : Icons.visibility_off_outlined),
-                                        onPressed: () => setState(() =>
-                                            _obscurePassword =
-                                                !_obscurePassword),
+                                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                                       ),
-                                      validator: (v) =>
-                                          (v != null && v.length < 6)
-                                              ? 'Min 6 characters'
-                                              : null,
+                                      validator: (v) => (v != null && v.length < 6)
+                                          ? 'Min 6 characters'
+                                          : null,
                                     ),
                                     const SizedBox(height: 16),
                                     _ModernTextField(
@@ -318,9 +393,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                         icon: Icon(_obscureConfirmPassword
                                             ? Icons.visibility_outlined
                                             : Icons.visibility_off_outlined),
-                                        onPressed: () => setState(() =>
-                                            _obscureConfirmPassword =
-                                                !_obscureConfirmPassword),
+                                        onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
                                       ),
                                       validator: (v) {
                                         if (v != _passwordController.text)
@@ -405,7 +478,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                               _GradientButton(
                                 isLoading: _isLoading,
                                 onPressed: (_isLoading || !_acceptTerms) ? null : _handleRegister,
-                                label: 'Register',
+                                label: 'Register as Vendor',
                               ),
                               SizedBox(
                                   height: ResponsiveUtils.responsivePadding(
@@ -463,6 +536,7 @@ class _ModernTextField extends StatelessWidget {
     this.obscureText = false,
     this.prefixIcon,
     this.suffixIcon,
+    this.maxLines = 1,
   });
 
   final TextEditingController controller;
@@ -472,6 +546,7 @@ class _ModernTextField extends StatelessWidget {
   final bool obscureText;
   final IconData? prefixIcon;
   final Widget? suffixIcon;
+  final int maxLines;
 
   @override
   Widget build(BuildContext context) {
@@ -481,6 +556,7 @@ class _ModernTextField extends StatelessWidget {
       keyboardType: keyboardType,
       obscureText: obscureText,
       validator: validator,
+      maxLines: maxLines,
       textInputAction: TextInputAction.next,
       decoration: InputDecoration(
         labelText: label,
@@ -493,8 +569,98 @@ class _ModernTextField extends StatelessWidget {
         border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+      ),
+    );
+  }
+}
+
+class _DocumentUploadWidget extends StatelessWidget {
+  const _DocumentUploadWidget({
+    required this.title,
+    required this.file,
+    required this.onPickFile,
+  });
+
+  final String title;
+  final File? file;
+  final VoidCallback onPickFile;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark
+            ? Colors.white.withValues(alpha: 0.06)
+            : Colors.black.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: file != null ? Colors.green : Colors.grey.withValues(alpha: 0.3),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                file != null ? Icons.check_circle : Icons.upload_file,
+                color: file != null ? Colors.green : Colors.grey,
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (file != null)
+            Text(
+              'Selected: ${file!.path.split('\\').last}',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.green,
+              ),
+            )
+          else
+            const Text(
+              'No file selected',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey,
+              ),
+            ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: onPickFile,
+              icon: const Icon(Icons.attach_file),
+              label: Text(file != null ? 'Change File' : 'Select File'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: theme.colorScheme.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -522,8 +688,7 @@ class _GradientButton extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color:
-                Theme.of(context).colorScheme.primary.withValues(alpha: 0.35),
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.35),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -539,8 +704,7 @@ class _GradientButton extends StatelessWidget {
                 ? const SizedBox(
                     height: 24,
                     width: 24,
-                    child: CircularProgressIndicator(
-                        color: Colors.white, strokeWidth: 2.5))
+                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5))
                 : Text(label,
                     style: const TextStyle(
                         color: Colors.white,

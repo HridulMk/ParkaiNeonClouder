@@ -95,6 +95,44 @@ class _ManagePricingScreenState extends State<ManagePricingScreen> {
     );
   }
 
+  Future<void> _deleteSpace(int spaceId, String spaceName) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF161B22),
+        title: const Text('Delete Parking Space', style: TextStyle(color: Colors.white)),
+        content: Text('Are you sure you want to permanently delete "$spaceName"?', style: const TextStyle(color: Colors.white70)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel', style: TextStyle(color: Colors.white54)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final result = await ParkingService.deleteParkingSpace(spaceId);
+    if (!mounted) return;
+
+    if (result['success'] == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Parking space deleted'), backgroundColor: Colors.green),
+      );
+      _load();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Delete failed: ${result['error']}'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
   Future<void> _updateSpace(int spaceId, String openTime, String closeTime) async {
     final result = await ParkingService.updateParkingSpace(
       spaceId: spaceId,
@@ -172,6 +210,10 @@ class _ManagePricingScreenState extends State<ManagePricingScreen> {
                               IconButton(
                                 icon: const Icon(Icons.edit, color: Colors.cyanAccent),
                                 onPressed: () => _editSpace(s),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete, color: Colors.redAccent),
+                                onPressed: () => _deleteSpace(s['id'] as int, s['name']?.toString() ?? 'this space'),
                               ),
                             ],
                           ),

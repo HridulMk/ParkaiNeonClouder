@@ -17,13 +17,23 @@ class ParkingListScreen extends StatefulWidget {
 
 class _ParkingListScreenState extends State<ParkingListScreen> {
   List<dynamic> spaces = [];
+  List<dynamic> _filteredSpaces = [];
+  List<String> _uniqueLocations = [];
   bool _isLoading = true;
   String? _errorMessage;
+  TextEditingController _searchController = TextEditingController();
+  String? _selectedLocation;
 
   @override
   void initState() {
     super.initState();
     _loadParkingSpaces();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadParkingSpaces() async {
@@ -36,8 +46,16 @@ class _ParkingListScreenState extends State<ParkingListScreen> {
       final loadedSpaces = await ParkingService.getParkingSpaces();
       if (!mounted) return;
 
+      final uniqueLocs = loadedSpaces
+          .map((s) => s['location']?.toString() ?? '')
+          .where((l) => l.isNotEmpty)
+          .toSet()
+          .toList();
+
       setState(() {
         spaces = loadedSpaces;
+        _uniqueLocations = uniqueLocs;
+        _filteredSpaces = loadedSpaces;
         _isLoading = false;
       });
     } catch (e) {
@@ -60,6 +78,62 @@ class _ParkingListScreenState extends State<ParkingListScreen> {
         );
       },
     );
+  }
+
+  void _showLocationDialog(Map<String, dynamic> space) {
+    final location = space['location'] ?? space['address'] ?? 'No location available';
+    final googleMapLink = (space['google_map_link'] ?? '').toString();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(space['name']?.toString() ?? 'Parking Space'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Location: $location'),
+            const SizedBox(height: 16),
+            if (googleMapLink.isNotEmpty)
+              ElevatedButton.icon(
+                icon: const Icon(Icons.map),
+                label: const Text('View Location'),
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  launchUrl(
+                    Uri.parse(googleMapLink),
+                    mode: LaunchMode.externalApplication,
+                  );
+                },
+              )
+            else
+              const Text('No map link available'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _filterSpaces(String query) {
+    setState(() {
+      var filtered = spaces;
+      if (query.isNotEmpty) {
+        filtered = filtered.where((space) {
+          final name = space['name']?.toString().toLowerCase() ?? '';
+          final location = space['location']?.toString().toLowerCase() ?? '';
+          return name.contains(query.toLowerCase()) || location.contains(query.toLowerCase());
+        }).toList();
+      }
+      if (_selectedLocation != null && _selectedLocation!.isNotEmpty) {
+        filtered = filtered.where((space) => space['location']?.toString() == _selectedLocation).toList();
+      }
+      _filteredSpaces = filtered;
+    });
   }
 
   @override
@@ -87,46 +161,102 @@ class _ParkingListScreenState extends State<ParkingListScreen> {
                       padding: EdgeInsets.all(
                         ResponsiveUtils.responsivePadding(context, mobile: 10, tablet: 12, desktop: 16),
                       ),
-                      child: ListView.separated(
-                        itemCount: spaces.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 8),
-                        itemBuilder: (context, i) {
-                          final space = spaces[i] as Map<String, dynamic>;
-                          final isActive = space['is_active'] == true;
-
-                          return Card(
-                            child: ListTile(
-                              leading: Icon(
-                                Icons.local_parking,
-                                color: isActive ? Colors.green : Colors.grey,
-                                size: isMobile ? 28 : 34,
-                              ),
-                              title: Text(space['name']?.toString() ?? 'Unnamed Space'),
-                              subtitle: Text(
-                                '${space['location'] ?? space['address'] ?? 'No location'}\nSlots: ${space['total_slots'] ?? 0}',
-                              ),
-                              isThreeLine: true,
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
+                      child: Column(
+                        children: [
+                          if (_uniqueLocations.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Row(
                                 children: [
-                                  if ((space['google_map_link'] ?? '').toString().isNotEmpty)
-                                    IconButton(
-                                      icon: const Icon(Icons.map, color: Colors.blue),
-                                      tooltip: 'Open in Google Maps',
-                                      onPressed: () => launchUrl(
-                                        Uri.parse(space['google_map_link'].toString()),
-                                        mode: LaunchMode.externalApplication,
-                                      ),
+                                  Expanded(
+                                    child: DropdownButton<String>(
+                                      value: _selectedLocation,
+                                      hint: const Text('Filter by Location'),
+                                      isExpanded: true,
+                                      items: [
+                                        const DropdownMenuItem<String>(
+                                          value: null,
+                                          child: Text('All Locations'),
+                                        ),
+                                        ..._uniqueLocations.map((loc) => DropdownMenuItem<String>(
+                                              value: loc,
+                                              child: Text(loc),
+                                            )),
+                                      ],
+                                      onChanged: (val) {
+                                        setState(() => _selectedLocation = val);
+                                        _filterSpaces(_searchController.text);
+                                      },
                                     ),
-                                  ElevatedButton(
-                                    onPressed: isActive ? () => _showSlotsForSpace(space) : null,
-                                    child: Text(isActive ? 'View Slots' : 'Inactive'),
                                   ),
                                 ],
                               ),
                             ),
-                          );
-                        },
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: TextField(
+                              controller: _searchController,
+                              decoration: const InputDecoration(
+                                hintText: 'Search parking spaces...',
+                                prefixIcon: Icon(Icons.search),
+                                border: OutlineInputBorder(),
+                              ),
+                              onChanged: _filterSpaces,
+                            ),
+                          ),
+                          Expanded(
+                            child: ListView.separated(
+                              itemCount: _filteredSpaces.length,
+                              separatorBuilder: (_, __) => const SizedBox(height: 8),
+                              itemBuilder: (context, i) {
+                                final space = _filteredSpaces[i] as Map<String, dynamic>;
+                                final isActive = space['is_active'] == true;
+
+                                return Card(
+                                  child: ListTile(
+                                    leading: Icon(
+                                      Icons.local_parking,
+                                      color: isActive ? Colors.green : Colors.grey,
+                                      size: isMobile ? 28 : 34,
+                                    ),
+                                    title: GestureDetector(
+                                      onTap: () => _showLocationDialog(space),
+                                      child: Text(
+                                        space['name']?.toString() ?? 'Unnamed Space',
+                                        style: const TextStyle(
+                                          color: Colors.blue,
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                      ),
+                                    ),
+                                    subtitle: Text(
+                                      '${space['location'] ?? space['address'] ?? 'No location'}\nSlots: ${space['total_slots'] ?? 0}',
+                                    ),
+                                    isThreeLine: true,
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        if ((space['google_map_link'] ?? '').toString().isNotEmpty)
+                                          IconButton(
+                                            icon: const Icon(Icons.map, color: Colors.blue),
+                                            tooltip: 'Open in Google Maps',
+                                            onPressed: () => launchUrl(
+                                              Uri.parse(space['google_map_link'].toString()),
+                                              mode: LaunchMode.externalApplication,
+                                            ),
+                                          ),
+                                        ElevatedButton(
+                                          onPressed: isActive ? () => _showSlotsForSpace(space) : null,
+                                          child: Text(isActive ? 'View Slots' : 'Inactive'),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
                       ),
                     );
   }
@@ -232,7 +362,22 @@ class _SpaceSlotsBottomSheetState extends State<_SpaceSlotsBottomSheet> {
   }
 
   Future<void> _reserveSlot(ParkingSlot slot) async {
-    final result = await ParkingService.reserveSlot(spaceId: _spaceId, slotId: slot.id);
+    // Show vehicle information dialog
+    final vehicleInfo = await showDialog<Map<String, String>>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const _VehicleInfoDialog(),
+    );
+
+    if (vehicleInfo == null) return; // User cancelled
+
+    final result = await ParkingService.reserveSlot(
+      spaceId: _spaceId, 
+      slotId: slot.id,
+      vehicleNumber: vehicleInfo['number']!,
+      vehicleType: vehicleInfo['type']!,
+    );
+    
     if (!mounted) return;
 
     if (result['success'] == true) {
@@ -348,6 +493,101 @@ class _SpaceSlotsBottomSheetState extends State<_SpaceSlotsBottomSheet> {
         ),
       ],
     );
+  }
+}
+
+class _VehicleInfoDialog extends StatefulWidget {
+  const _VehicleInfoDialog();
+
+  @override
+  State<_VehicleInfoDialog> createState() => _VehicleInfoDialogState();
+}
+
+class _VehicleInfoDialogState extends State<_VehicleInfoDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _vehicleNumberController = TextEditingController();
+  String? _selectedVehicleType;
+
+  final List<String> _vehicleTypes = ['SUV', 'Pickup', 'Sedan', 'Hatchback'];
+
+  @override
+  void dispose() {
+    _vehicleNumberController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Vehicle Information'),
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              controller: _vehicleNumberController,
+              decoration: const InputDecoration(
+                labelText: 'Vehicle Number',
+                hintText: 'e.g., ABC-1234',
+                border: OutlineInputBorder(),
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Vehicle number is required';
+                }
+                return null;
+              },
+              textCapitalization: TextCapitalization.characters,
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              initialValue: _selectedVehicleType,
+              decoration: const InputDecoration(
+                labelText: 'Vehicle Type',
+                border: OutlineInputBorder(),
+              ),
+              items: _vehicleTypes.map((type) {
+                return DropdownMenuItem<String>(
+                  value: type.toLowerCase(),
+                  child: Text(type),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedVehicleType = value;
+                });
+              },
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please select a vehicle type';
+                }
+                return null;
+              },
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: _submit,
+          child: const Text('Reserve'),
+        ),
+      ],
+    );
+  }
+
+  void _submit() {
+    if (_formKey.currentState!.validate()) {
+      Navigator.of(context).pop({
+        'number': _vehicleNumberController.text.trim().toUpperCase(),
+        'type': _selectedVehicleType!,
+      });
+    }
   }
 }
 

@@ -3,13 +3,13 @@ from datetime import timedelta
 import io
 import json
 import os
-import subprocess
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 
 from django.conf import settings
 from django.core.files.base import ContentFile
-from django.core.files.storage import FileSystemStorage
 from django.db import transaction
+from django.db.models import Count, Q, Sum
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import status, viewsets
@@ -19,9 +19,11 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework import status
+from concurrent.futures import ThreadPoolExecutor
 import qrcode
 
-from .models import CCTVFeed, Gate, ParkingSlot, ParkingSpace, Reservation, User
+from .models import CCTVFeed, Gate, ParkingSlot, ParkingSpace, Reservation, User, VehicleLog
 from .permissions import IsAdminUserType, IsVendorOrAdmin
 from .realtime import notify_slot_update
 from .serializers import (
@@ -34,6 +36,7 @@ from .serializers import (
     ReservationSerializer,
     UserRegistrationSerializer,
     UserSerializer,
+    VehicleLogSerializer,
 )
 
 BOOKING_FEE = Decimal('1.00')
@@ -42,15 +45,15 @@ HOURLY_RATE = Decimal('2.40')
 
 def _generate_qr_image(reservation):
     img = qrcode.make(reservation.qr_code)
-    buffer = io.BytesIO()
-    img.save(buffer, format='PNG')
-    buffer.seek(0)
-    filename = f"{reservation.reservation_id}.png"
-    reservation.qr_image.save(
-        filename,
-        ContentFile(buffer.read()),
-        save=False,
-    )
+    with io.BytesIO() as buffer:
+        img.save(buffer, format='PNG')
+        buffer.seek(0)
+        filename = f"{reservation.reservation_id}.png"
+        reservation.qr_image.save(
+            filename,
+            ContentFile(buffer.read()),
+            save=False,
+        )
 
 
 def _can_manage_space(user, space):
@@ -70,7 +73,7 @@ def _active_booking_exists(slot):
     ).exists()
 
 
-def _create_pending_reservation(user, slot):
+def _create_pending_reservation(user, slot, vehicle_number=None, vehicle_type=None):
     if user.user_type != 'customer':
         return Response({'detail': 'Only customers can create a booking reservation.'}, status=status.HTTP_403_FORBIDDEN)
 
@@ -95,6 +98,8 @@ def _create_pending_reservation(user, slot):
         booking_fee=BOOKING_FEE,
         booking_fee_paid=False,
         hourly_rate=HOURLY_RATE,
+        vehicle_number=vehicle_number or '',
+        vehicle_type=vehicle_type or '',
         status=Reservation.STATUS_PENDING_BOOKING_PAYMENT,
     )
 
@@ -158,7 +163,17 @@ class CustomerSlotBookingEndpoint(APIView):
 
     def post(self, request, space_id, slot_id):
         slot = get_object_or_404(ParkingSlot, id=slot_id, space_id=space_id)
-        return _create_pending_reservation(request.user, slot)
+        
+        # Get vehicle information from request
+        vehicle_number = request.data.get('vehicle_number', '').strip()
+        vehicle_type = request.data.get('vehicle_type', '').strip()
+        
+        # Validate vehicle type
+        valid_vehicle_types = ['suv', 'pickup', 'sedan', 'hatchback']
+        if vehicle_type and vehicle_type not in valid_vehicle_types:
+            return Response({'detail': 'Invalid vehicle type. Must be one of: suv, pickup, sedan, hatchback.'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        return _create_pending_reservation(request.user, slot, vehicle_number, vehicle_type)
 
 
 class ParkingSpaceDeleteEndpoint(APIView):
@@ -249,90 +264,171 @@ class ParkingSpaceCCTVUploadEndpoint(APIView):
         return Response(ParkingSpaceSerializer(parking_space).data, status=status.HTTP_200_OK)
 
 
-class ParkingLotVideoProcessEndpoint(APIView):
+
+
+
+class ParkingLotSaveVideoEndpoint(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
 
     def post(self, request):
         file_obj = request.FILES.get('video')
+
         if not file_obj:
             return Response(
                 {'detail': 'No video file provided. Expected field name "video".'},
-                status=status.HTTP_400_BAD_REQUEST,
+                status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Create a job record on disk first
-        jobs_dir = os.path.join(settings.MEDIA_ROOT, 'parking_lot_jobs')
-        os.makedirs(jobs_dir, exist_ok=True)
-        job_id = uuid.uuid4().hex
-        job_path = os.path.join(jobs_dir, f'{job_id}.json')
+        # ✅ Generate unique session ID
+        session_id = uuid.uuid4().hex
 
-        # Save input video
-        input_dir = os.path.join(settings.BASE_DIR, 'parking_lot-main', 'uploads', job_id)
-        os.makedirs(input_dir, exist_ok=True)
-        input_storage = FileSystemStorage(location=input_dir)
-        input_name = input_storage.save(file_obj.name, file_obj)
-        input_path = input_storage.path(input_name)
+        # ✅ Base upload directory
+        base_upload_dir = os.path.join(settings.MEDIA_ROOT, 'parking_uploads')
+        os.makedirs(base_upload_dir, exist_ok=True)
 
-        # Save polygons if provided
-        polygons_data = request.POST.get('polygons')
-        if polygons_data:
-            try:
-                polygons = json.loads(polygons_data)
-                polygons_path = os.path.join(input_dir, 'polygons.json')
-                with open(polygons_path, 'w', encoding='utf-8') as f:
-                    json.dump(polygons, f)
-            except (json.JSONDecodeError, ValueError):
-                pass  # Ignore invalid polygons
+        # ✅ Create session folder
+        session_dir = os.path.join(base_upload_dir, session_id)
+        os.makedirs(session_dir, exist_ok=True)
 
-        # Prepare output path inside MEDIA_ROOT so job status can serve it
-        output_dir = os.path.join(settings.MEDIA_ROOT, 'parking_lot_output')
-        os.makedirs(output_dir, exist_ok=True)
-        base_name, _ = os.path.splitext(input_name)
-        output_name = base_name + '_processed.mp4'
-        output_path = os.path.join(output_dir, output_name)
+        # ✅ Preserve original extension
+        ext = os.path.splitext(file_obj.name)[1] or ".mp4"
 
-        job_payload = {
-            'job_id': job_id,
-            'status': 'queued',
-            'input_relative_path': os.path.join('uploads', job_id, input_name),
-            'output_relative_path': os.path.join('parking_lot_output', output_name),
-            'error': None,
-        }
+        video_filename = f"input{ext}"
+        video_path = os.path.join(session_dir, video_filename)
+
+        print("📁 Saving video to:", video_path)
+
         try:
-            with open(job_path, 'w', encoding='utf-8') as f:
-                json.dump(job_payload, f)
-        except OSError:
-            return Response({'detail': 'Failed to create processing job.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            with open(video_path, 'wb+') as f:
+                for chunk in file_obj.chunks():
+                    f.write(chunk)
+        except OSError as e:
+            return Response(
+                {'detail': f'Failed to save video: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
-        # Run the parking_lot-main processing script in the background
-        script_path = os.path.join(settings.BASE_DIR, 'parking_lot-main', 'process_video.py')
-        subprocess.Popen(  # noqa: S603
-            ['python', str(script_path), input_path, output_path, job_path],
-        )
+        # ✅ Get file size safely
+        size = os.path.getsize(video_path)
 
-        input_url = None  # Since video is not in media root, no public URL
-
-        return Response(
-            {
-                'job_id': job_id,
-                'status': 'queued',
-                'input_video_url': input_url,
-            },
-            status=status.HTTP_202_ACCEPTED,
-        )
+        return Response({
+            'success': True,
+            'session_id': session_id,
+            'video_path': f"parking_uploads/{session_id}/{video_filename}",
+            'size': size
+        }, status=status.HTTP_200_OK)
 
 
+
+
+
+class ParkingLotRunAnalysisEndpoint(APIView):
+    """Run YOLO analysis using session_id (media folder based)."""
+    permission_classes = []  # add IsAuthenticated if needed
+
+    def post(self, request):
+        session_id = request.data.get('session_id') or request.POST.get('session_id')
+
+        if not session_id:
+            return Response(
+                {'success': False, 'error': 'session_id is required.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # 📂 Session directory
+        session_dir = os.path.join(settings.MEDIA_ROOT, 'parking_uploads', session_id)
+
+        print("\n🚀 RUN ANALYSIS START")
+        print("📌 Session ID:", session_id)
+        print("📂 Session dir:", session_dir)
+
+        if not os.path.exists(session_dir):
+            return Response(
+                {'success': False, 'error': 'Session folder not found.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        files = os.listdir(session_dir)
+        print("📂 Files in session:", files)
+
+        # ✅ Check video exists
+        video_exists = any(f.lower().endswith(('.mp4', '.avi', '.mov')) for f in files)
+        if not video_exists:
+            return Response(
+                {'success': False, 'error': 'No video file found in session.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # ✅ Check polygons
+        if 'polygons.json' not in files:
+            return Response(
+                {'success': False, 'error': 'polygons.json not found.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            from .process_video import process_video
+
+            print("⚙️ Starting YOLO processing...")
+
+            # 🚀 Run processing (thread)
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(process_video, session_id)
+                result = future.result()
+
+            print("📦 PROCESS RESULT:", result)
+
+        except Exception as exc:
+            import traceback
+            traceback.print_exc()
+
+            return Response(
+                {'success': False, 'error': str(exc)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        # ❌ If processing failed
+        if not result.get("success"):
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
+
+        # ✅ 🔥 FIX: Get output directly from process_video
+        output_path = result.get("output_path")
+        output_url = result.get("output_url")
+
+        print("📤 Output path:", output_path)
+        print("🌐 Output URL:", output_url)
+
+        # Extra safety (optional)
+        if not output_path or not os.path.exists(output_path):
+            return Response(
+                {'success': False, 'error': 'Output video not found after processing.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        return Response({
+            'success': True,
+            'occupied': result.get('occupied', 0),
+            'free': result.get('free', 0),
+            'total': result.get('total', 0),
+            'output_video_url': output_url,
+        }, status=status.HTTP_200_OK)
+        
+        
+        
 class ParkingLotPolygonsEndpoint(APIView):
     permission_classes = [IsAuthenticated, IsVendorOrAdmin]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get(self, request):
-        job_id = request.query_params.get('job_id')
-        if job_id:
-            polygons_path = os.path.join(settings.BASE_DIR, 'parking_lot-main', 'uploads', job_id, 'polygons.json')
-        else:
-            polygons_path = os.path.join(settings.BASE_DIR, 'parking_lot-main', 'uploads', 'polygons.json')
+        session_id = request.query_params.get('session_id')
+
+        if not session_id:
+            return Response({'polygons': []}, status=status.HTTP_200_OK)
+
+        session_dir = os.path.join(settings.MEDIA_ROOT, 'parking_uploads', session_id)
+        polygons_path = os.path.join(session_dir, 'polygons.json')
+
         if not os.path.exists(polygons_path):
             return Response({'polygons': []}, status=status.HTTP_200_OK)
 
@@ -345,118 +441,99 @@ class ParkingLotPolygonsEndpoint(APIView):
         return Response({'polygons': data}, status=status.HTTP_200_OK)
 
     def post(self, request):
-        job_id = request.POST.get('job_id')
-        polygons_str = request.POST.get('polygons')
-        if not polygons_str:
-            return Response({'detail': 'Polygons data is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        session_id = request.data.get('session_id')
 
-        try:
-            polygons = json.loads(polygons_str)
-        except json.JSONDecodeError:
-            return Response({'detail': 'Invalid polygons JSON.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not session_id:
+            return Response(
+                {'detail': 'session_id is required.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        polygons = request.data.get('polygons')
+
+        # ✅ Accept string JSON
+        if isinstance(polygons, str):
+            try:
+                polygons = json.loads(polygons)
+            except json.JSONDecodeError:
+                return Response(
+                    {'detail': 'Invalid polygons JSON.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        if not polygons:
+            return Response(
+                {'detail': 'Polygons data is required.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         if not isinstance(polygons, list):
-            return Response({'detail': 'Invalid payload: "polygons" must be a list.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {'detail': '"polygons" must be a list.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-        # Basic validation: each polygon should be a list of at least 3 points [x, y].
+        # ✅ Validate structure
         for poly in polygons:
             if not isinstance(poly, list) or len(poly) < 3:
                 return Response(
-                    {'detail': 'Each polygon must be a list of at least 3 [x, y] points.'},
-                    status=status.HTTP_400_BAD_REQUEST,
+                    {'detail': 'Each polygon must have at least 3 points.'},
+                    status=status.HTTP_400_BAD_REQUEST
                 )
+
             for point in poly:
                 if (
-                    not isinstance(point, (list, tuple))
-                    or len(point) != 2
-                    or not isinstance(point[0], (int, float))
-                    or not isinstance(point[1], (int, float))
+                    not isinstance(point, (list, tuple)) or
+                    len(point) != 2 or
+                    not isinstance(point[0], (int, float)) or
+                    not isinstance(point[1], (int, float))
                 ):
                     return Response(
-                        {'detail': 'Each point must be a two-element list [x, y] with numeric values.'},
-                        status=status.HTTP_400_BAD_REQUEST,
+                        {'detail': 'Each point must be [x, y] numeric.'},
+                        status=status.HTTP_400_BAD_REQUEST
                     )
 
-        if job_id:
-            dir_path = os.path.join(settings.BASE_DIR, 'parking_lot-main', 'uploads', job_id)
-            polygons_path = os.path.join(dir_path, 'polygons.json')
-            video_path = os.path.join(dir_path, 'video.mp4')
-        else:
-            dir_path = os.path.join(settings.BASE_DIR, 'parking_lot-main', 'uploads')
-            polygons_path = os.path.join(dir_path, 'polygons.json')
-            video_path = os.path.join(dir_path, 'video.mp4')
+        # ✅ Session directory
+        session_dir = os.path.join(settings.MEDIA_ROOT, 'parking_uploads', session_id)
 
-        os.makedirs(dir_path, exist_ok=True)
+        # 🔥 IMPORTANT: Ensure session exists
+        if not os.path.exists(session_dir):
+            return Response(
+                {'detail': 'Session not found. Please upload video first.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-        # Save polygons
-        try:
-            with open(polygons_path, 'w', encoding='utf-8') as f:
-                json.dump(polygons, f)
-        except OSError:
-            return Response({'detail': 'Failed to write polygons configuration.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        # Save video if provided
-        file_obj = request.FILES.get('video')
-        if file_obj:
-            try:
-                with open(video_path, 'wb') as f:
-                    for chunk in file_obj.chunks():
-                        f.write(chunk)
-            except OSError:
-                return Response({'detail': 'Failed to save video file.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        return Response({'polygons': polygons}, status=status.HTTP_200_OK)
-
-
-class ParkingLotVideoJobStatusEndpoint(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, job_id: str):
-        jobs_dir = os.path.join(settings.MEDIA_ROOT, 'parking_lot_jobs')
-        job_path = os.path.join(jobs_dir, f'{job_id}.json')
-
-        if not os.path.exists(job_path):
-            return Response({'detail': 'Job not found.'}, status=status.HTTP_404_NOT_FOUND)
-
-        try:
-            with open(job_path, 'r', encoding='utf-8') as f:
-                data = json.load(f) or {}
-        except (OSError, json.JSONDecodeError):
-            return Response({'detail': 'Failed to read job status.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        status_value = data.get('status', 'queued')
-        input_rel = data.get('input_relative_path')
-        output_rel = data.get('output_relative_path')
-        error = data.get('error')
-        occupied = data.get('occupied')
-        free = data.get('free')
-        total = data.get('total')
-
-        input_url = None
-        output_url = None
-
-        if input_rel:
-            input_url = request.build_absolute_uri(settings.MEDIA_URL + input_rel.replace('\\', '/'))
-
-        if output_rel:
-            output_full_path = os.path.join(settings.MEDIA_ROOT, output_rel)
-            if os.path.exists(output_full_path):
-                output_url = request.build_absolute_uri(settings.MEDIA_URL + output_rel.replace('\\', '/'))
-
-        return Response(
-            {
-                'job_id': job_id,
-                'status': status_value,
-                'input_video_url': input_url,
-                'output_video_url': output_url,
-                'error': error,
-                'occupied': occupied,
-                'free': free,
-                'total': total,
-            },
-            status=status.HTTP_200_OK,
+        # 🔥 IMPORTANT: Ensure video exists
+        video_exists = any(
+            f.startswith("input") for f in os.listdir(session_dir)
         )
 
+        if not video_exists:
+            return Response(
+                {'detail': 'Video not found in session. Save video first.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        polygons_path = os.path.join(session_dir, 'polygons.json')
+
+        print("📁 Saving polygons to:", polygons_path)
+
+        try:
+            with open(polygons_path, 'w', encoding='utf-8') as f:
+                json.dump(polygons, f, indent=2)
+        except OSError as e:
+            return Response(
+                {'detail': f'Failed to write polygons: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        return Response({
+            'success': True,
+            'session_id': session_id,
+            'message': 'Polygons saved successfully',
+            'path': f'parking_uploads/{session_id}/polygons.json',
+            'count': len(polygons)
+        }, status=status.HTTP_200_OK)
 class ParkingSlotActivateEndpoint(APIView):
     permission_classes = [IsAuthenticated, IsAdminUserType]
 
@@ -507,6 +584,78 @@ def register_user(request):
         user = serializer.save()
         return Response({'message': 'User registered successfully', 'user': UserSerializer(user).data}, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_parking_spaces_for_security(request):
+    """Get all active parking spaces for security personnel registration"""
+    parking_spaces = ParkingSpace.objects.filter(is_active=True).select_related('vendor')
+    serializer = ParkingSpaceSerializer(parking_spaces, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated, IsAdminUserType])
+def admin_metrics(request):
+    total_users = User.objects.count()
+    total_customers = User.objects.filter(user_type='customer').count()
+    total_vendors = User.objects.filter(user_type='vendor').count()
+    total_security = User.objects.filter(user_type='security').count()
+    total_admins = User.objects.filter(user_type='admin').count()
+
+    space_counts = ParkingSpace.objects.aggregate(
+        total_spaces=Count('id'),
+        active_spaces=Count('id', filter=Q(is_active=True)),
+        inactive_spaces=Count('id', filter=Q(is_active=False)),
+    )
+
+    slot_counts = ParkingSlot.objects.aggregate(
+        total_slots=Count('id'),
+        active_slots=Count('id', filter=Q(is_active=True)),
+        occupied_slots=Count('id', filter=Q(is_occupied=True)),
+    )
+
+    reservation_counts = Reservation.objects.aggregate(
+        total_reservations=Count('id'),
+        active_reservations=Count('id', filter=Q(status__in=[
+            Reservation.STATUS_PENDING_BOOKING_PAYMENT,
+            Reservation.STATUS_RESERVED,
+            Reservation.STATUS_CHECKED_IN,
+        ])),
+        completed_reservations=Count('id', filter=Q(status=Reservation.STATUS_COMPLETED)),
+        pending_reservations=Count('id', filter=Q(status=Reservation.STATUS_PENDING_BOOKING_PAYMENT)),
+        total_revenue=Sum('amount', filter=Q(is_paid=True)),
+    )
+
+    vendor_pending_documents = User.objects.filter(
+        user_type='vendor'
+    ).filter(
+        Q(land_tax_receipt__isnull=True) |
+        Q(license_document__isnull=True) |
+        Q(government_id__isnull=True)
+    ).count()
+
+    total_revenue = reservation_counts['total_revenue'] or 0
+    return Response({
+        'total_users': total_users,
+        'total_customers': total_customers,
+        'total_vendors': total_vendors,
+        'total_security': total_security,
+        'total_admins': total_admins,
+        'total_spaces': space_counts['total_spaces'],
+        'active_spaces': space_counts['active_spaces'],
+        'inactive_spaces': space_counts['inactive_spaces'],
+        'total_slots': slot_counts['total_slots'],
+        'active_slots': slot_counts['active_slots'],
+        'occupied_slots': slot_counts['occupied_slots'],
+        'total_reservations': reservation_counts['total_reservations'],
+        'active_reservations': reservation_counts['active_reservations'],
+        'completed_reservations': reservation_counts['completed_reservations'],
+        'pending_reservations': reservation_counts['pending_reservations'],
+        'total_revenue': f"{total_revenue:.2f}",
+        'vendor_pending_documents': vendor_pending_documents,
+    }, status=status.HTTP_200_OK)
 
 
 class ParkingSpaceViewSet(viewsets.ModelViewSet):
@@ -760,6 +909,239 @@ class GateViewSet(viewsets.ModelViewSet):
 class CCTVFeedViewSet(viewsets.ModelViewSet):
     queryset = CCTVFeed.objects.all()
     serializer_class = CCTVFeedSerializer
+
+
+class VehicleLogViewSet(viewsets.ModelViewSet):
+    queryset = VehicleLog.objects.select_related('space', 'slot', 'user').all()
+    serializer_class = VehicleLogSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = VehicleLog.objects.select_related('space', 'slot', 'user').all().order_by('-check_in_time')
+        user = self.request.user
+
+        # Admin can see all logs
+        if user.user_type == 'admin' or user.is_staff:
+            return queryset
+
+        # Security and vendor can see logs for their assigned spaces
+        if user.user_type == 'security':
+            space_id = user.assigned_parking_space_id
+            if space_id:
+                return queryset.filter(space_id=space_id)
+            return VehicleLog.objects.none()
+
+        if user.user_type == 'vendor':
+            return queryset.filter(space__vendor=user)
+
+        # Customers can only see their own logs
+        return queryset.filter(user=user)
+
+    @action(detail=False, methods=['get'], url_path='space/(?P<space_id>[^/.]+)')
+    def by_space(self, request, space_id=None):
+        """Get vehicle logs for a specific parking space"""
+        queryset = self.get_queryset().filter(space_id=space_id)
+        paginator = self.paginator if self.paginator else None
+        if paginator:
+            page = paginator.paginate_queryset(queryset, request)
+            serializer = self.get_serializer(page, many=True)
+            return paginator.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['post'])
+    def check_in(self, request):
+        """Record vehicle check-in"""
+        serializer = self.get_serializer(data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'])
+    def check_out(self, request, pk=None):
+        """Record vehicle check-out"""
+        log = self.get_object()
+        log.check_out_time = timezone.now()
+        log.save(update_fields=['check_out_time', 'duration_minutes'])
+        serializer = self.get_serializer(log)
+        return Response(serializer.data)
+
+
+class VehicleImageProcessEndpoint(APIView):
+    """Process vehicle image to extract vehicle number and type"""
+    permission_classes = [IsAuthenticated]
+    parser_classes = (MultiPartParser, FormParser)
+    
+    def post(self, request):
+        """Process image to extract vehicle number and type using YOLO"""
+        try:
+            image_file = request.FILES.get('image')
+            if not image_file:
+                return Response(
+                    {'error': 'No image file provided'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Import YOLO models
+            try:
+                from ultralytics import YOLO
+                import cv2
+                import numpy as np
+                import pytesseract
+            except ImportError:
+                return Response(
+                    {'error': 'Required dependencies not installed (YOLO, OpenCV, pytesseract)'},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+            
+            # Read image from uploaded file
+            image_data = image_file.read()
+            nparr = np.frombuffer(image_data, np.uint8)
+            frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            
+            if frame is None:
+                return Response(
+                    {'error': 'Invalid image format'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            vehicle_number = 'NOT_DETECTED'
+            vehicle_type = 'UNKNOWN'
+            
+            try:
+                # Load YOLO models
+                yolo_path = os.path.join(settings.BASE_DIR, 'parking_lot-main', 'best.pt')
+                license_plate_path = os.path.join(settings.BASE_DIR, 'YOLO', 'license_plate_detector.pt')
+                
+                # Vehicle detection model
+                if os.path.exists(yolo_path):
+                    vehicle_model = YOLO(yolo_path)
+                    vehicle_results = vehicle_model(frame)
+                    
+                    # Get vehicle type from detections
+                    if vehicle_results and len(vehicle_results) > 0:
+                        detections = vehicle_results[0]
+                        if hasattr(detections, 'boxes') and detections.boxes is not None and len(detections.boxes) > 0:
+                            # Get the first (best) vehicle detection
+                            boxes = detections.boxes
+                            if len(boxes) > 0:
+                                box = boxes[0]  # First detection
+                                if hasattr(box, 'cls') and box.cls is not None:
+                                    # Get class ID and confidence
+                                    class_id = int(box.cls.cpu().numpy()) if hasattr(box.cls, 'cpu') else int(box.cls)
+                                    confidence = float(box.conf.cpu().numpy()) if hasattr(box.conf, 'cpu') else float(box.conf)
+                                    
+                                    # Get class names from model
+                                    class_names = vehicle_model.names if hasattr(vehicle_model, 'names') else {}
+                                    detected_class = class_names.get(class_id, f'VEHICLE_{class_id}')
+                                    
+                                    # Map to our vehicle types
+                                    if confidence > 0.5:  # Only use high confidence detections
+                                        detected_class_lower = detected_class.lower()
+                                        if 'car' in detected_class_lower or 'sedan' in detected_class_lower:
+                                            vehicle_type = 'sedan'
+                                        elif 'pickup' in detected_class_lower or 'truck' in detected_class_lower:
+                                            vehicle_type = 'pickup'
+                                        elif 'suv' in detected_class_lower:
+                                            vehicle_type = 'suv'
+                                        elif 'hatchback' in detected_class_lower or 'hatch' in detected_class_lower:
+                                            vehicle_type = 'hatchback'
+                                        else:
+                                            vehicle_type = detected_class
+                
+                # License plate detection and OCR
+                if os.path.exists(license_plate_path):
+                    license_model = YOLO(license_plate_path)
+                    plate_results = license_model(frame)
+                    
+                    if plate_results and len(plate_results) > 0:
+                        detections = plate_results[0]
+                        if hasattr(detections, 'boxes') and detections.boxes is not None and len(detections.boxes) > 0:
+                            # Get the first (best) license plate detection
+                            boxes = detections.boxes
+                            if len(boxes) > 0:
+                                # Get bounding box coordinates
+                                box = boxes[0]  # First detection
+                                if hasattr(box, 'xyxy') and box.xyxy is not None:
+                                    x1, y1, x2, y2 = box.xyxy[0].cpu().numpy() if hasattr(box.xyxy[0], 'cpu') else box.xyxy[0]
+                                    x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+                                    
+                                    # Ensure coordinates are within image bounds
+                                    h, w = frame.shape[:2]
+                                    x1, y1 = max(0, x1), max(0, y1)
+                                    x2, y2 = min(w, x2), min(h, y2)
+                                    
+                                    if x2 > x1 and y2 > y1:
+                                        # Crop license plate region
+                                        plate_crop = frame[y1:y2, x1:x2]
+                                        
+                                        # OCR on plate
+                                        try:
+                                            # Check if tesseract is available
+                                            import subprocess
+                                            result = subprocess.run(['tesseract', '--version'], 
+                                                                  capture_output=True, text=True, timeout=5)
+                                            if result.returncode == 0:
+                                                vehicle_number = pytesseract.image_to_string(
+                                                    plate_crop,
+                                                    config='--psm 8 --oem 3 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+                                                ).strip().upper()
+                                                
+                                                # Clean up OCR result - keep only alphanumeric and spaces
+                                                vehicle_number = ''.join(c for c in vehicle_number if c.isalnum() or c.isspace())
+                                                vehicle_number = ' '.join(vehicle_number.split())  # Remove extra spaces
+                                                
+                                                if not vehicle_number or len(vehicle_number) < 3:
+                                                    vehicle_number = 'NOT_DETECTED'
+                                            else:
+                                                vehicle_number = 'TESSERACT_NOT_INSTALLED'
+                                        except subprocess.TimeoutExpired:
+                                            vehicle_number = 'OCR_TIMEOUT'
+                                        except Exception as e:
+                                            print(f'OCR failed: {e}')
+                                            vehicle_number = 'OCR_FAILED'
+                                    else:
+                                        vehicle_number = 'INVALID_PLATE_REGION'
+                                else:
+                                    vehicle_number = 'NO_PLATE_COORDINATES'
+                            else:
+                                vehicle_number = 'NO_PLATE_DETECTED'
+                        else:
+                            vehicle_number = 'NO_PLATE_BOXES'
+                    else:
+                        vehicle_number = 'NO_PLATE_RESULTS'
+                
+            except Exception as e:
+                print(f'Error processing with YOLO: {e}')
+            
+            # Determine vehicle type mapping (if not from YOLO)
+            if vehicle_type == 'VEHICLE' or vehicle_type == 'UNKNOWN':
+                # Try to detect vehicle type from image characteristics
+                height, width = frame.shape[:2]
+                aspect_ratio = width / height
+                
+                # Simple heuristics for vehicle type
+                if aspect_ratio > 2.0:
+                    vehicle_type = 'sedan'
+                elif aspect_ratio > 1.8:
+                    vehicle_type = 'pickup'
+                elif aspect_ratio < 1.2:
+                    vehicle_type = 'suv'
+                else:
+                    vehicle_type = 'hatchback'
+            
+            return Response({
+                'vehicle_number': vehicle_number,
+                'vehicle_type': vehicle_type.lower().replace('car', 'sedan'),
+                'confidence': 0.85,  # Placeholder confidence score
+                'status': 'success'
+            })
+        
+        except Exception as e:
+            return Response(
+                {'error': f'Error processing image: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):

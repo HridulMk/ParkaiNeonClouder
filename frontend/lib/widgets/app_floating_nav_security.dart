@@ -1,5 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../screens/cctv_cameras.dart';
+import '../screens/logs_screen.dart';
+import '../screens/gate_camera.dart';
 
 class AppFloatingNavSecurity extends StatelessWidget {
   final int selectedIndex;
@@ -67,7 +70,12 @@ class AppFloatingNavSecurity extends StatelessWidget {
                             selected: selectedIndex == 0,
                             iconSize: iconSize,
                             labelSize: labelSize,
-                            onTap: () => onTap(0),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const CCTVCamerasScreen()),
+                              );
+                            },
                           ),
                         ),
                         Expanded(
@@ -88,17 +96,27 @@ class AppFloatingNavSecurity extends StatelessWidget {
                             selected: selectedIndex == 3,
                             iconSize: iconSize,
                             labelSize: labelSize,
-                            onTap: () => onTap(3),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const LogsScreen()),
+                              );
+                            },
                           ),
                         ),
                         Expanded(
                           child: _NavButton(
-                            icon: Icons.warning_amber_outlined,
-                            label: 'Alerts',
+                            icon: Icons.smart_toy_outlined,
+                            label: 'AI',
                             selected: selectedIndex == 4,
                             iconSize: iconSize,
                             labelSize: labelSize,
-                            onTap: () => onTap(4),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const GateCameraScreen()),
+                              );
+                            },
                           ),
                         ),
                       ],

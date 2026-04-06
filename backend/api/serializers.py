@@ -1,14 +1,29 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from .models import CCTVFeed, Gate, ParkingSlot, ParkingSpace, Reservation, User
+from .models import CCTVFeed, Gate, ParkingSlot, ParkingSpace, Reservation, User, VehicleLog
 
 
 class UserSerializer(serializers.ModelSerializer):
+    assigned_parking_space_id = serializers.IntegerField(source='assigned_parking_space.id', read_only=True)
+    assigned_parking_space_name = serializers.CharField(source='assigned_parking_space.name', read_only=True)
+
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'phone', 'user_type', 'is_active', 'is_staff']
-        read_only_fields = ['id']
+        fields = [
+            'id',
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            'phone',
+            'user_type',
+            'assigned_parking_space_id',
+            'assigned_parking_space_name',
+            'is_active',
+            'is_staff',
+        ]
+        read_only_fields = ['id', 'assigned_parking_space_id', 'assigned_parking_space_name']
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -16,19 +31,66 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     password_confirm = serializers.CharField(write_only=True)
     full_name = serializers.CharField(write_only=True)
     is_active = serializers.BooleanField(default=False)
+    assigned_parking_space = serializers.IntegerField(required=False, allow_null=True)
+
+    # Vendor-specific fields
+    address = serializers.CharField(required=False, allow_blank=True)
+    company_name = serializers.CharField(required=False, allow_blank=True)
+    land_owner_name = serializers.CharField(required=False, allow_blank=True)
+    land_tax_receipt = serializers.FileField(required=False, allow_null=True)
+    license_document = serializers.FileField(required=False, allow_null=True)
+    government_id = serializers.FileField(required=False, allow_null=True)
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'full_name', 'phone', 'user_type', 'password', 'password_confirm', 'is_active']
+        fields = [
+            'username', 'email', 'full_name', 'phone', 'user_type', 'password', 'password_confirm', 'is_active',
+            'assigned_parking_space', 'address', 'company_name', 'land_owner_name',
+            'land_tax_receipt', 'license_document', 'government_id'
+        ]
 
     def validate(self, data):
         if data['password'] != data['password_confirm']:
             raise serializers.ValidationError('Passwords do not match')
+
+        user_type = data.get('user_type', 'customer')
+        assigned_parking_space = data.get('assigned_parking_space')
+
+        if user_type == 'security':
+            if assigned_parking_space is None:
+                raise serializers.ValidationError('Security personnel must be assigned to a parking space')
+            # Validate that the parking space exists and is active
+            try:
+                from .models import ParkingSpace
+                parking_space = ParkingSpace.objects.get(id=assigned_parking_space, is_active=True)
+            except ParkingSpace.DoesNotExist:
+                raise serializers.ValidationError('Invalid or inactive parking space selected')
+        elif assigned_parking_space is not None:
+            raise serializers.ValidationError('Only security personnel can be assigned to parking spaces')
+
+        # Validate vendor-specific fields
+        if user_type == 'vendor':
+            if not data.get('address', '').strip():
+                raise serializers.ValidationError('Address is required for vendors')
+            if not data.get('company_name', '').strip():
+                raise serializers.ValidationError('Company name is required for vendors')
+            if not data.get('land_owner_name', '').strip():
+                raise serializers.ValidationError('Land owner name is required for vendors')
+
         return data
 
     def create(self, validated_data):
         validated_data.pop('password_confirm')
         full_name = validated_data.pop('full_name')
+        assigned_parking_space_id = validated_data.pop('assigned_parking_space', None)
+
+        # Extract vendor-specific fields
+        address = validated_data.pop('address', '')
+        company_name = validated_data.pop('company_name', '')
+        land_owner_name = validated_data.pop('land_owner_name', '')
+        land_tax_receipt = validated_data.pop('land_tax_receipt', None)
+        license_document = validated_data.pop('license_document', None)
+        government_id = validated_data.pop('government_id', None)
 
         name_parts = full_name.strip().split(' ', 1)
         first_name = name_parts[0]
@@ -48,7 +110,21 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             user_type=validated_data.get('user_type', 'customer'),
             password=validated_data['password'],
             is_active=is_active,
+            # Vendor-specific fields
+            address=address,
+            company_name=company_name,
+            land_owner_name=land_owner_name,
+            land_tax_receipt=land_tax_receipt,
+            license_document=license_document,
+            government_id=government_id,
         )
+
+        if assigned_parking_space_id:
+            from .models import ParkingSpace
+            parking_space = ParkingSpace.objects.get(id=assigned_parking_space_id)
+            user.assigned_parking_space = parking_space
+            user.save()
+
         return user
 
 
@@ -195,6 +271,37 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 pass
 
         return super().validate(attrs)
+
+
+class VehicleLogSerializer(serializers.ModelSerializer):
+    space_name = serializers.CharField(source='space.name', read_only=True)
+    slot_label = serializers.CharField(source='slot.label', read_only=True, allow_null=True)
+    user_name = serializers.CharField(source='user.username', read_only=True, allow_null=True)
+    duration_hours = serializers.SerializerMethodField()
+
+    class Meta:
+        model = VehicleLog
+        fields = [
+            'id',
+            'space',
+            'space_name',
+            'slot',
+            'slot_label',
+            'vehicle_number',
+            'vehicle_type',
+            'check_in_time',
+            'check_out_time',
+            'duration_minutes',
+            'duration_hours',
+            'user',
+            'user_name',
+            'created_at',
+        ]
+
+    def get_duration_hours(self, obj):
+        if obj.duration_minutes:
+            return round(obj.duration_minutes / 60, 2)
+        return None
 
 
 

@@ -133,9 +133,9 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 
 
-# File upload settings
-FILE_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024  # 100MB
-DATA_UPLOAD_MAX_MEMORY_SIZE = 100 * 1024 * 1024  # 100MB
+# File upload settings — use temp files on disk, not RAM buffering
+FILE_UPLOAD_MAX_MEMORY_SIZE = 2 * 1024 * 1024      # 2MB threshold — larger files go to disk
+DATA_UPLOAD_MAX_MEMORY_SIZE = 500 * 1024 * 1024    # 500MB max total
 
 # Custom user model
 AUTH_USER_MODEL = 'api.User'

@@ -28,6 +28,7 @@ class _LoginScreenState extends State<LoginScreen>
 
   bool _obscurePassword = true;
   bool _isLoading = false;
+  String _selectedRegisterType = 'customer';
   late AnimationController _animController;
   late Animation<double> _fadeAnimation;
 
@@ -136,7 +137,11 @@ class _LoginScreenState extends State<LoginScreen>
         }
 
         if (mounted) {
-          Navigator.pushReplacementNamed(context, routeName);
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            routeName,
+            (route) => false,
+          );
         }
       } else {
         // Handle auth-specific errors (including network from response)
@@ -308,42 +313,12 @@ class _LoginScreenState extends State<LoginScreen>
                                       desktop: 60)),
 
                               // User type badge
-                              Center(
-                                child: Container(
-                                  padding: EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: theme.colorScheme.primary
-                                        .withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: theme.colorScheme.primary
-                                          .withValues(alpha: 0.3),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    widget.userTitle,
-                                    style: TextStyle(
-                                      color: theme.colorScheme.primary,
-                                      fontSize:
-                                          ResponsiveUtils.responsiveFontSize(
-                                              context,
-                                              mobile: 11,
-                                              tablet: 12,
-                                              desktop: 12),
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                                ),
-                              ),
                               SizedBox(
                                   height: ResponsiveUtils.responsivePadding(
                                       context,
                                       mobile: 16,
                                       tablet: 18,
                                       desktop: 20)),
-
                               // Logo / App name with nice animation
                               Hero(
                                 tag: 'app-logo',
@@ -470,22 +445,63 @@ class _LoginScreenState extends State<LoginScreen>
                                       tablet: 32,
                                       desktop: 36)),
 
-                              // Social login hint
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
+                              // Register type picker
+                              Column(
                                 children: [
-                                  Text(
-                                    "Don't have an account? ",
-                                    style: TextStyle(
-                                        color:
-                                            theme.colorScheme.onSurfaceVariant,
-                                        fontSize: subtitleFontSize),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.pushNamed(context, '/register');
-                                    },
-                                    child: const Text('Sign up'),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        "Register as ",
+                                        style: TextStyle(
+                                            color:
+                                                theme.colorScheme.onSurfaceVariant,
+                                            fontSize: subtitleFontSize),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      DropdownButton<String>(
+                                        value: _selectedRegisterType,
+                                        items: const [
+                                          DropdownMenuItem(
+                                            value: 'customer',
+                                            child: Text('Customer'),
+                                          ),
+                                          DropdownMenuItem(
+                                            value: 'vendor',
+                                            child: Text('Slot Vendor'),
+                                          ),
+                                          DropdownMenuItem(
+                                            value: 'security',
+                                            child: Text('Security Personnel'),
+                                          ),
+                                        ],
+                                        onChanged: (value) {
+                                          if (value != null) {
+                                            setState(() {
+                                              _selectedRegisterType = value;
+                                            });
+                                          }
+                                        },
+                                      ),
+                                      const SizedBox(width: 12),
+                                      TextButton(
+                                        onPressed: () {
+                                          String route;
+                                          switch (_selectedRegisterType) {
+                                            case 'vendor':
+                                              route = '/vendor-register';
+                                              break;
+                                            case 'security':
+                                              route = '/security-register';
+                                              break;
+                                            default:
+                                              route = '/register';
+                                          }
+                                          Navigator.pushNamed(context, route);
+                                        },
+                                        child: const Text('Continue'),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
@@ -496,6 +512,33 @@ class _LoginScreenState extends State<LoginScreen>
                                       mobile: 24,
                                       tablet: 32,
                                       desktop: 40)),
+
+                              // Terms and Conditions link
+                              Center(
+                                child: TextButton(
+                                  onPressed: () => Navigator.pushNamed(context, '/terms-and-conditions'),
+                                  child: Text(
+                                    'Terms and Conditions',
+                                    style: TextStyle(
+                                      color: theme.colorScheme.primary,
+                                      fontSize: ResponsiveUtils.responsiveFontSize(
+                                        context,
+                                        mobile: 14,
+                                        tablet: 16,
+                                        desktop: 16,
+                                      ),
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                  ),
+                                ),
+                              ),
+
+                              SizedBox(
+                                  height: ResponsiveUtils.responsivePadding(
+                                      context,
+                                      mobile: 16,
+                                      tablet: 20,
+                                      desktop: 24)),
                             ],
                           ),
                         ),

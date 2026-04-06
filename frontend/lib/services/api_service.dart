@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
@@ -24,26 +24,9 @@ class ApiService {
 
   static String get baseUrl {
     if (kIsWeb) return 'http://localhost:8000/api';
-    if (Platform.isAndroid) return 'http://10.0.2.2:8000/api';
-    if (Platform.isIOS) return 'http://localhost:8000/api';
+    // ignore: do_not_use_environment
     return 'http://localhost:8000/api';
   }
-
-  // static String get baseUrl {
-  //   return 'http://192.168.0.184:8000/api';
-  //     // return 'https://parkingai.onrender.com/api';
-  //   return 'http://10.36.14.137:8000/api';
-  // }
-
-
-
-
-
-
-
-
-
-
 
   static Future<Map<String, String>> _headers({bool auth = false}) async {
     final headers = <String, String>{'Content-Type': 'application/json'};
@@ -70,14 +53,14 @@ class ApiService {
     return _processResponse(response);
   }
 
-  static Future<dynamic> post(String endpoint, {Map<String, dynamic>? body, bool auth = false}) async {
+  static Future<dynamic> post(String endpoint, {Map<String, dynamic>? body, bool auth = false, Duration? timeout}) async {
     final response = await http
         .post(
           Uri.parse('$baseUrl/$endpoint'),
           headers: await _headers(auth: auth),
           body: jsonEncode(body ?? {}),
         )
-        .timeout(const Duration(seconds: 60));
+        .timeout(timeout ?? const Duration(seconds: 60));
     return _processResponse(response);
   }
 
@@ -98,16 +81,20 @@ class ApiService {
       for (final entry in files.entries) {
         final file = entry.value;
         if (file.bytes != null && file.bytes!.isNotEmpty) {
-          request.files.add(http.MultipartFile.fromBytes(entry.key, file.bytes!, filename: file.filename));
+          request.files.add(
+            http.MultipartFile.fromBytes(entry.key, file.bytes!, filename: file.filename),
+          );
           continue;
         }
-        if (file.path != null && file.path!.isNotEmpty) {
-          request.files.add(await http.MultipartFile.fromPath(entry.key, file.path!, filename: file.filename));
+        if (!kIsWeb && file.path != null && file.path!.isNotEmpty) {
+          request.files.add(
+            await http.MultipartFile.fromPath(entry.key, file.path!, filename: file.filename),
+          );
         }
       }
     }
 
-    final streamed = await request.send().timeout(const Duration(minutes: 5));
+    final streamed = await request.send();
     final response = await http.Response.fromStream(streamed);
     return _processResponse(response);
   }
@@ -148,6 +135,7 @@ class ApiService {
     switch (response.statusCode) {
       case 200:
       case 201:
+      case 202:
         return data;
       case 400:
         throw Exception(_extractErrorMessage(data) ?? 'Bad request');
@@ -168,7 +156,7 @@ class ApiService {
     if (data is Map<String, dynamic>) {
       if (data['detail'] != null) return data['detail'].toString();
       if (data['error'] != null) return data['error'].toString();
-      if (data['non_field_errors'] is List && data['non_field_errors'].isNotEmpty) {
+      if (data['non_field_errors'] is List && (data['non_field_errors'] as List).isNotEmpty) {
         return data['non_field_errors'].first.toString();
       }
     }

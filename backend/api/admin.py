@@ -5,7 +5,14 @@ from .models import User, ParkingSpace, ParkingSlot, Reservation, Gate, CCTVFeed
 class UserAdmin(admin.ModelAdmin):
     list_display = ['username', 'email', 'first_name', 'last_name', 'phone', 'user_type', 'is_active']
     list_filter = ['user_type', 'is_active']
-    actions = ['activate_users', 'deactivate_users']
+    actions = [
+        'activate_users',
+        'deactivate_users',
+        'make_customers',
+        'make_vendors',
+        'make_security',
+        'make_admins',
+    ]
 
     @admin.action(description='Activate selected users')
     def activate_users(self, request, queryset):
@@ -14,6 +21,26 @@ class UserAdmin(admin.ModelAdmin):
     @admin.action(description='Deactivate selected users')
     def deactivate_users(self, request, queryset):
         queryset.update(is_active=False)
+
+    @admin.action(description='Change selected users to Customer')
+    def make_customers(self, request, queryset):
+        updated = queryset.update(user_type='customer')
+        self.message_user(request, f"{updated} user(s) were updated to Customer.")
+
+    @admin.action(description='Change selected users to Slot Vendor')
+    def make_vendors(self, request, queryset):
+        updated = queryset.update(user_type='vendor')
+        self.message_user(request, f"{updated} user(s) were updated to Slot Vendor.")
+
+    @admin.action(description='Change selected users to Security')
+    def make_security(self, request, queryset):
+        updated = queryset.update(user_type='security')
+        self.message_user(request, f"{updated} user(s) were updated to Security.")
+
+    @admin.action(description='Change selected users to Admin')
+    def make_admins(self, request, queryset):
+        updated = queryset.update(user_type='admin')
+        self.message_user(request, f"{updated} user(s) were updated to Admin.")
 
 @admin.register(ParkingSpace)
 class ParkingSpaceAdmin(admin.ModelAdmin):
