@@ -299,6 +299,8 @@ class ParkingService {
 
   static Future<Map<String, dynamic>> savePolygons(List<List<Offset>> polygons, {
     required String sessionId,
+    double displayWidth = 0,
+    double displayHeight = 0,
   }) async {
     try {
       final payloadPolygons = polygons
@@ -307,6 +309,8 @@ class ParkingService {
       final fields = <String, String>{
         'session_id': sessionId,
         'polygons': jsonEncode(payloadPolygons),
+        'display_width': displayWidth.toString(),
+        'display_height': displayHeight.toString(),
       };
       final response = await ApiService.postMultipart(
         'parking-lot/polygons/',
@@ -482,6 +486,31 @@ class ParkingService {
       final endpoint = isActive ? 'slots/$slotId/activate/' : 'slots/$slotId/deactivate/';
       final response = await ApiService.post(endpoint, auth: true);
       return {'success': true, 'data': response};
+    } catch (e) {
+      return {'success': false, 'error': e.toString().replaceFirst('Exception: ', '')};
+    }
+  }
+
+  static Future<Map<String, dynamic>> processVehicleImage({
+    required List<int> imageBytes,
+    required String imageFileName,
+  }) async {
+    try {
+      final response = await ApiService.postMultipart(
+        'vehicle/process-image/',
+        auth: true,
+        files: {
+          'image': MultipartUploadFile(
+            filename: imageFileName,
+            bytes: imageBytes,
+          ),
+        },
+      );
+      return {
+        'success': true,
+        'vehicle_number': response['vehicle_number']?.toString() ?? 'NOT_DETECTED',
+        'vehicle_type': response['vehicle_type']?.toString() ?? 'UNKNOWN',
+      };
     } catch (e) {
       return {'success': false, 'error': e.toString().replaceFirst('Exception: ', '')};
     }

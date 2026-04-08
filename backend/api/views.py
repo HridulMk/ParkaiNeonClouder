@@ -438,7 +438,8 @@ class ParkingLotPolygonsEndpoint(APIView):
         except (json.JSONDecodeError, OSError, ValueError):
             return Response({'polygons': []}, status=status.HTTP_200_OK)
 
-        return Response({'polygons': data}, status=status.HTTP_200_OK)
+        polygons = data.get('polygons', data) if isinstance(data, dict) else data
+        return Response({'polygons': polygons}, status=status.HTTP_200_OK)
 
     def post(self, request):
         session_id = request.data.get('session_id')
@@ -518,9 +519,18 @@ class ParkingLotPolygonsEndpoint(APIView):
 
         print("📁 Saving polygons to:", polygons_path)
 
+        display_width = float(request.data.get('display_width') or 0)
+        display_height = float(request.data.get('display_height') or 0)
+
+        payload = {
+            'polygons': polygons,
+            'display_width': display_width,
+            'display_height': display_height,
+        }
+
         try:
             with open(polygons_path, 'w', encoding='utf-8') as f:
-                json.dump(polygons, f, indent=2)
+                json.dump(payload, f, indent=2)
         except OSError as e:
             return Response(
                 {'detail': f'Failed to write polygons: {str(e)}'},
@@ -968,180 +978,36 @@ class VehicleLogViewSet(viewsets.ModelViewSet):
 
 
 class VehicleImageProcessEndpoint(APIView):
-    """Process vehicle image to extract vehicle number and type"""
+    """Process vehicle image to extract vehicle number and type using YOLO"""
     permission_classes = [IsAuthenticated]
     parser_classes = (MultiPartParser, FormParser)
-    
+
     def post(self, request):
-        """Process image to extract vehicle number and type using YOLO"""
+        image_file = request.FILES.get('image')
+        if not image_file:
+            return Response({'error': 'No image file provided'}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
-            image_file = request.FILES.get('image')
-            if not image_file:
-                return Response(
-                    {'error': 'No image file provided'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
-            # Import YOLO models
-            try:
-                from ultralytics import YOLO
-                import cv2
-                import numpy as np
-                import pytesseract
-            except ImportError:
-                return Response(
-                    {'error': 'Required dependencies not installed (YOLO, OpenCV, pytesseract)'},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
-            
-            # Read image from uploaded file
-            image_data = image_file.read()
-            nparr = np.frombuffer(image_data, np.uint8)
-            frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            
-            if frame is None:
-                return Response(
-                    {'error': 'Invalid image format'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
-            vehicle_number = 'NOT_DETECTED'
-            vehicle_type = 'UNKNOWN'
-            
-            try:
-                # Load YOLO models
-                yolo_path = os.path.join(settings.BASE_DIR, 'parking_lot-main', 'best.pt')
-                license_plate_path = os.path.join(settings.BASE_DIR, 'YOLO', 'license_plate_detector.pt')
-                
-                # Vehicle detection model
-                if os.path.exists(yolo_path):
-                    vehicle_model = YOLO(yolo_path)
-                    vehicle_results = vehicle_model(frame)
-                    
-                    # Get vehicle type from detections
-                    if vehicle_results and len(vehicle_results) > 0:
-                        detections = vehicle_results[0]
-                        if hasattr(detections, 'boxes') and detections.boxes is not None and len(detections.boxes) > 0:
-                            # Get the first (best) vehicle detection
-                            boxes = detections.boxes
-                            if len(boxes) > 0:
-                                box = boxes[0]  # First detection
-                                if hasattr(box, 'cls') and box.cls is not None:
-                                    # Get class ID and confidence
-                                    class_id = int(box.cls.cpu().numpy()) if hasattr(box.cls, 'cpu') else int(box.cls)
-                                    confidence = float(box.conf.cpu().numpy()) if hasattr(box.conf, 'cpu') else float(box.conf)
-                                    
-                                    # Get class names from model
-                                    class_names = vehicle_model.names if hasattr(vehicle_model, 'names') else {}
-                                    detected_class = class_names.get(class_id, f'VEHICLE_{class_id}')
-                                    
-                                    # Map to our vehicle types
-                                    if confidence > 0.5:  # Only use high confidence detections
-                                        detected_class_lower = detected_class.lower()
-                                        if 'car' in detected_class_lower or 'sedan' in detected_class_lower:
-                                            vehicle_type = 'sedan'
-                                        elif 'pickup' in detected_class_lower or 'truck' in detected_class_lower:
-                                            vehicle_type = 'pickup'
-                                        elif 'suv' in detected_class_lower:
-                                            vehicle_type = 'suv'
-                                        elif 'hatchback' in detected_class_lower or 'hatch' in detected_class_lower:
-                                            vehicle_type = 'hatchback'
-                                        else:
-                                            vehicle_type = detected_class
-                
-                # License plate detection and OCR
-                if os.path.exists(license_plate_path):
-                    license_model = YOLO(license_plate_path)
-                    plate_results = license_model(frame)
-                    
-                    if plate_results and len(plate_results) > 0:
-                        detections = plate_results[0]
-                        if hasattr(detections, 'boxes') and detections.boxes is not None and len(detections.boxes) > 0:
-                            # Get the first (best) license plate detection
-                            boxes = detections.boxes
-                            if len(boxes) > 0:
-                                # Get bounding box coordinates
-                                box = boxes[0]  # First detection
-                                if hasattr(box, 'xyxy') and box.xyxy is not None:
-                                    x1, y1, x2, y2 = box.xyxy[0].cpu().numpy() if hasattr(box.xyxy[0], 'cpu') else box.xyxy[0]
-                                    x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
-                                    
-                                    # Ensure coordinates are within image bounds
-                                    h, w = frame.shape[:2]
-                                    x1, y1 = max(0, x1), max(0, y1)
-                                    x2, y2 = min(w, x2), min(h, y2)
-                                    
-                                    if x2 > x1 and y2 > y1:
-                                        # Crop license plate region
-                                        plate_crop = frame[y1:y2, x1:x2]
-                                        
-                                        # OCR on plate
-                                        try:
-                                            # Check if tesseract is available
-                                            import subprocess
-                                            result = subprocess.run(['tesseract', '--version'], 
-                                                                  capture_output=True, text=True, timeout=5)
-                                            if result.returncode == 0:
-                                                vehicle_number = pytesseract.image_to_string(
-                                                    plate_crop,
-                                                    config='--psm 8 --oem 3 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-                                                ).strip().upper()
-                                                
-                                                # Clean up OCR result - keep only alphanumeric and spaces
-                                                vehicle_number = ''.join(c for c in vehicle_number if c.isalnum() or c.isspace())
-                                                vehicle_number = ' '.join(vehicle_number.split())  # Remove extra spaces
-                                                
-                                                if not vehicle_number or len(vehicle_number) < 3:
-                                                    vehicle_number = 'NOT_DETECTED'
-                                            else:
-                                                vehicle_number = 'TESSERACT_NOT_INSTALLED'
-                                        except subprocess.TimeoutExpired:
-                                            vehicle_number = 'OCR_TIMEOUT'
-                                        except Exception as e:
-                                            print(f'OCR failed: {e}')
-                                            vehicle_number = 'OCR_FAILED'
-                                    else:
-                                        vehicle_number = 'INVALID_PLATE_REGION'
-                                else:
-                                    vehicle_number = 'NO_PLATE_COORDINATES'
-                            else:
-                                vehicle_number = 'NO_PLATE_DETECTED'
-                        else:
-                            vehicle_number = 'NO_PLATE_BOXES'
-                    else:
-                        vehicle_number = 'NO_PLATE_RESULTS'
-                
-            except Exception as e:
-                print(f'Error processing with YOLO: {e}')
-            
-            # Determine vehicle type mapping (if not from YOLO)
-            if vehicle_type == 'VEHICLE' or vehicle_type == 'UNKNOWN':
-                # Try to detect vehicle type from image characteristics
-                height, width = frame.shape[:2]
-                aspect_ratio = width / height
-                
-                # Simple heuristics for vehicle type
-                if aspect_ratio > 2.0:
-                    vehicle_type = 'sedan'
-                elif aspect_ratio > 1.8:
-                    vehicle_type = 'pickup'
-                elif aspect_ratio < 1.2:
-                    vehicle_type = 'suv'
-                else:
-                    vehicle_type = 'hatchback'
-            
-            return Response({
-                'vehicle_number': vehicle_number,
-                'vehicle_type': vehicle_type.lower().replace('car', 'sedan'),
-                'confidence': 0.85,  # Placeholder confidence score
-                'status': 'success'
-            })
-        
-        except Exception as e:
-            return Response(
-                {'error': f'Error processing image: {str(e)}'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            import cv2
+            import numpy as np
+            from YOLO.process_image import process_vehicle_image
+        except ImportError as e:
+            return Response({'error': f'Missing dependency: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        nparr = np.frombuffer(image_file.read(), np.uint8)
+        frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+        if frame is None:
+            return Response({'error': 'Invalid image format'}, status=status.HTTP_400_BAD_REQUEST)
+
+        result = process_vehicle_image(frame)
+
+        return Response({
+            'vehicle_number': result['vehicle_number'],
+            'vehicle_type': result['vehicle_type'],
+            'debug': result.get('debug', ''),
+            'status': 'success'
+        })
 
 
 class CustomTokenObtainPairView(TokenObtainPairView):

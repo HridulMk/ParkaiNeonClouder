@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-
-import '../services/auth_service.dart';
+import 'dart:typed_data';
+import '../services/parking_service.dart';
 
 class GateCameraScreen extends StatefulWidget {
   const GateCameraScreen({super.key});
@@ -14,62 +11,38 @@ class GateCameraScreen extends StatefulWidget {
 }
 
 class _GateCameraScreenState extends State<GateCameraScreen> {
-  File? _selectedImage;
+  Uint8List? _imageBytes;
+  String? _imageFileName;
   String? _vehicleNumber;
   String? _vehicleType;
   bool _processing = false;
   String? _error;
   final ImagePicker _imagePicker = ImagePicker();
 
-  Future<void> _pickImage() async {
+  Future<void> _pickImage({required ImageSource source}) async {
     try {
       final pickedFile = await _imagePicker.pickImage(
-        source: ImageSource.gallery,
+        source: source,
         imageQuality: 85,
       );
-
       if (pickedFile != null) {
+        final bytes = await pickedFile.readAsBytes();
         setState(() {
-          _selectedImage = File(pickedFile.path);
+          _imageBytes = bytes;
+          _imageFileName = pickedFile.name;
           _vehicleNumber = null;
           _vehicleType = null;
           _error = null;
         });
       }
     } catch (e) {
-      setState(() {
-        _error = 'Failed to pick image: $e';
-      });
-    }
-  }
-
-  Future<void> _captureImage() async {
-    try {
-      final pickedFile = await _imagePicker.pickImage(
-        source: ImageSource.camera,
-        imageQuality: 85,
-      );
-
-      if (pickedFile != null) {
-        setState(() {
-          _selectedImage = File(pickedFile.path);
-          _vehicleNumber = null;
-          _vehicleType = null;
-          _error = null;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _error = 'Failed to capture image: $e';
-      });
+      setState(() => _error = 'Failed to pick image: $e');
     }
   }
 
   Future<void> _processImage() async {
-    if (_selectedImage == null) {
-      setState(() {
-        _error = 'Please select an image first';
-      });
+    if (_imageBytes == null) {
+      setState(() => _error = 'Please select an image first');
       return;
     }
 
@@ -78,49 +51,20 @@ class _GateCameraScreenState extends State<GateCameraScreen> {
       _error = null;
     });
 
-    try {
-      final token = await AuthService.getToken();
-      if (token == null) {
-        throw Exception('Authentication token not found');
-      }
+    final result = await ParkingService.processVehicleImage(
+      imageBytes: _imageBytes!,
+      imageFileName: _imageFileName ?? 'image.jpg',
+    );
 
-      // Create multipart request
-      final request = http.MultipartRequest(
-        'POST',
-        Uri.parse('http://192.168.1.163:8000/api/vehicle/process-image/'),
-      );
-
-      // Add authorization header
-      request.headers['Authorization'] = 'Bearer $token';
-
-      // Add image file
-      request.files.add(
-        await http.MultipartFile.fromPath(
-          'image',
-          _selectedImage!.path,
-        ),
-      );
-
-      // Send request
-      final response = await request.send();
-      final responseBody = await response.stream.bytesToString();
-      final jsonResponse = jsonDecode(responseBody);
-
-      if (response.statusCode == 200) {
-        setState(() {
-          _vehicleNumber = jsonResponse['vehicle_number']?.toString() ?? 'Not detected';
-          _vehicleType = jsonResponse['vehicle_type']?.toString() ?? 'Not detected';
-          _processing = false;
-        });
-      } else {
-        setState(() {
-          _error = jsonResponse['error'] ?? 'Failed to process image';
-          _processing = false;
-        });
-      }
-    } catch (e) {
+    if (result['success'] == true) {
       setState(() {
-        _error = 'Error processing image: $e';
+        _vehicleNumber = result['vehicle_number'];
+        _vehicleType = result['vehicle_type'];
+        _processing = false;
+      });
+    } else {
+      setState(() {
+        _error = result['error'] ?? 'Failed to process image';
         _processing = false;
       });
     }
@@ -172,11 +116,11 @@ class _GateCameraScreenState extends State<GateCameraScreen> {
                         color: Colors.white10,
                       ),
                     ),
-                    child: _selectedImage != null
+                    child: _imageBytes != null
                         ? ClipRRect(
                             borderRadius: BorderRadius.circular(8),
-                            child: Image.file(
-                              _selectedImage!,
+                            child: Image.memory(
+                              _imageBytes!,
                               fit: BoxFit.cover,
                             ),
                           )
@@ -204,7 +148,7 @@ class _GateCameraScreenState extends State<GateCameraScreen> {
                     children: [
                       Expanded(
                         child: ElevatedButton.icon(
-                          onPressed: _captureImage,
+                          onPressed: () => _pickImage(source: ImageSource.camera),
                           icon: const Icon(Icons.camera_alt),
                           label: const Text('Capture'),
                           style: ElevatedButton.styleFrom(
@@ -217,7 +161,7 @@ class _GateCameraScreenState extends State<GateCameraScreen> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: ElevatedButton.icon(
-                          onPressed: _pickImage,
+                          onPressed: () => _pickImage(source: ImageSource.gallery),
                           icon: const Icon(Icons.upload_file),
                           label: const Text('Upload'),
                           style: ElevatedButton.styleFrom(
@@ -234,7 +178,7 @@ class _GateCameraScreenState extends State<GateCameraScreen> {
             ),
             const SizedBox(height: 24),
             // Process Button
-            if (_selectedImage != null)
+            if (_imageBytes != null)
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -401,7 +345,7 @@ class _GateCameraScreenState extends State<GateCameraScreen> {
                   ],
                 ),
               ),
-            if (_vehicleNumber == null && _vehicleType == null && _selectedImage == null)
+            if (_vehicleNumber == null && _vehicleType == null && _imageBytes == null)
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(

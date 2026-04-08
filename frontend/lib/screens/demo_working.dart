@@ -213,7 +213,15 @@ Future<void> _saveVideo() async {
       );
       return;
     }
-    final result = await ParkingService.savePolygons(_polygons, sessionId: _sessionId!);
+    final displayWidth = MediaQuery.of(context).size.width - 40;
+    final videoSize = _videoController!.value.size;
+    final displayHeight = displayWidth / videoSize.width * videoSize.height;
+    final result = await ParkingService.savePolygons(
+      _polygons,
+      sessionId: _sessionId!,
+      displayWidth: displayWidth,
+      displayHeight: displayHeight,
+    );
     if (!mounted) return;
     if (result['success'] == true) {
       ScaffoldMessenger.of(context).showSnackBar(

@@ -88,8 +88,12 @@ class _LogsScreenState extends State<LogsScreen> {
       for (final log in allLogs) {
         if (log['space_name'] != null) {
           spaces.add(log['space_name'].toString());
-        } else if (log['slot'] != null && log['slot']['space'] != null && log['slot']['space']['name'] != null) {
-          spaces.add(log['slot']['space']['name'].toString());
+        } else {
+          final slot = _slotMap(log);
+          final space = slot?['space'];
+          if (space is Map && space['name'] != null) {
+            spaces.add(space['name'].toString());
+          }
         }
       }
 
@@ -152,8 +156,10 @@ class _LogsScreenState extends State<LogsScreen> {
     // Filter by space
     if (_selectedSpace != null && _selectedSpace!.isNotEmpty) {
       filtered = filtered.where((log) {
-        final spaceName = log['space_name']?.toString() ?? 
-                         log['slot']?['space']?['name']?.toString() ?? '';
+        final slot = _slotMap(log);
+        final space = slot?['space'];
+        final spaceName = log['space_name']?.toString() ??
+            (space is Map ? space['name']?.toString() : null) ?? '';
         return spaceName == _selectedSpace;
       }).toList();
     }
@@ -161,6 +167,11 @@ class _LogsScreenState extends State<LogsScreen> {
     setState(() {
       _filteredLogs = filtered;
     });
+  }
+
+  Map<String, dynamic>? _slotMap(dynamic log) {
+    final slot = log['slot'];
+    return slot is Map<String, dynamic> ? slot : null;
   }
 
   String _getDurationText(dynamic log) {
@@ -484,15 +495,15 @@ class _LogsScreenState extends State<LogsScreen> {
                                         children: [
                                           _LogDetailRow(
                                             label: 'Space',
-                                            value: isVehicleLog 
+                                            value: isVehicleLog
                                               ? (log['space_name']?.toString() ?? 'N/A')
-                                              : (log['slot']?['space']?['name']?.toString() ?? 'N/A'),
+                                              : (() { final s = _slotMap(log)?['space']; return s is Map ? s['name']?.toString() ?? 'N/A' : 'N/A'; })(),
                                           ),
                                           _LogDetailRow(
                                             label: 'Slot',
-                                            value: isVehicleLog 
+                                            value: isVehicleLog
                                               ? (log['slot_label']?.toString() ?? 'N/A')
-                                              : (log['slot']?['label']?.toString() ?? 'N/A'),
+                                              : (_slotMap(log)?['label']?.toString() ?? 'N/A'),
                                           ),
                                           if (isVehicleLog) ...[
                                             _LogDetailRow(

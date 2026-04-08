@@ -24,4 +24,4 @@ imageio-ffmpeg
 ultralytics
 opencv-python
 lap
-pytesseract
+easyocr
