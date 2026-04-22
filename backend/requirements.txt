@@ -21,8 +21,13 @@ uvicorn[standard]
 
 cvzone
 imageio-ffmpeg
+
 numpy>=1.26.4,<2.0
 ultralytics
 opencv-python
 lap
 easyocr
+
+cloudinary
+django-cloudinary-storage
+dj-database-url
