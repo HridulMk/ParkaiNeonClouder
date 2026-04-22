@@ -1,7 +1,8 @@
+from decimal import Decimal
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from .models import CCTVFeed, Gate, ParkingSlot, ParkingSpace, Reservation, User, VehicleLog
+from .models import CCTVFeed, Gate, ParkingSlot, ParkingSpace, PaymentRecord, Reservation, User, VehicleLog
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -134,19 +135,10 @@ class ParkingSpaceSerializer(serializers.ModelSerializer):
     class Meta:
         model = ParkingSpace
         fields = [
-            'id',
-            'name',
-            'vendor',
-            'vendor_name',
-            'address',
-            'location',
-            'total_slots',
-            'open_time',
-            'close_time',
-            'google_map_link',
-            'parking_image',
-            'cctv_video',
-            'is_active',
+            'id', 'name', 'vendor', 'vendor_name', 'address', 'location',
+            'total_slots', 'open_time', 'close_time', 'google_map_link',
+            'parking_image', 'cctv_video', 'is_active',
+            'hourly_rate', 'booking_fee',
             'created_at',
         ]
 
@@ -204,33 +196,64 @@ class ParkingSlotSerializer(serializers.ModelSerializer):
 
 class ReservationSerializer(serializers.ModelSerializer):
     user_name = serializers.CharField(source='user.username', read_only=True)
+    user_full_name = serializers.SerializerMethodField()
+    user_email = serializers.CharField(source='user.email', read_only=True)
+    user_phone = serializers.CharField(source='user.phone', read_only=True)
     slot_label = serializers.CharField(source='slot.label', read_only=True)
+    slot_identifier = serializers.CharField(source='slot.slot_id', read_only=True)
+    parking_space_id = serializers.IntegerField(source='slot.space.id', read_only=True)
+    parking_space_name = serializers.CharField(source='slot.space.name', read_only=True)
+    parking_space_location = serializers.CharField(source='slot.space.location', read_only=True)
+    duration_hours = serializers.SerializerMethodField()
+    total_charged = serializers.SerializerMethodField()
 
     class Meta:
         model = Reservation
         fields = [
-            'id',
-            'user',
-            'user_name',
-            'slot',
-            'slot_label',
-            'reservation_id',
-            'start_time',
-            'end_time',
-            'amount',
-            'is_paid',
-            'booking_fee',
-            'booking_fee_paid',
-            'checkin_time',
-            'checkout_time',
-            'final_fee',
-            'final_fee_paid',
+            'id', 'reservation_id',
+            'user', 'user_name', 'user_full_name', 'user_email', 'user_phone',
+            'slot', 'slot_label', 'slot_identifier',
+            'parking_space_id', 'parking_space_name', 'parking_space_location',
+            'vehicle_number', 'vehicle_type',
+            'start_time', 'end_time', 'checkin_time', 'checkout_time',
+            'duration_hours',
+            'booking_fee', 'booking_fee_paid',
             'hourly_rate',
-            'status',
-            'qr_code',
-            'qr_image',
+            'final_fee', 'final_fee_paid',
+            'amount', 'is_paid',
+            'total_charged',
+            'status', 'qr_code', 'qr_image',
             'created_at',
         ]
+
+    def get_user_full_name(self, obj):
+        name = f"{obj.user.first_name} {obj.user.last_name}".strip()
+        return name or obj.user.username
+
+    def get_duration_hours(self, obj):
+        if obj.checkin_time and obj.checkout_time:
+            delta = obj.checkout_time - obj.checkin_time
+            return round(delta.total_seconds() / 3600, 2)
+        return None
+
+    def get_total_charged(self, obj):
+        total = Decimal('0.00')
+        if obj.booking_fee_paid:
+            total += obj.booking_fee
+        if obj.final_fee_paid and obj.final_fee:
+            total += obj.final_fee
+        return str(total)
+
+
+class PaymentRecordSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PaymentRecord
+        fields = [
+            'id', 'reservation', 'user', 'user_full_name', 'user_email', 'user_phone',
+            'slot_id', 'slot_label', 'parking_space_name', 'parking_space_location',
+            'payment_type', 'amount', 'paid_at', 'transaction_ref',
+        ]
+        read_only_fields = fields
 
 
 class GateSerializer(serializers.ModelSerializer):

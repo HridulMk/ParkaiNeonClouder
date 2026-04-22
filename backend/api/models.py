@@ -63,6 +63,11 @@ class ParkingSpace(models.Model):
     parking_image = models.ImageField(upload_to='parking_space_images/', null=True, blank=True)
     cctv_video = models.FileField(upload_to='parking_space_cctv/', null=True, blank=True)
     is_active = models.BooleanField(default=True)
+    # Realistic Indian parking rates (Rs per hour)
+    hourly_rate = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('30.00'),
+        help_text='Hourly parking rate in Rs (default Rs 30/hr)')
+    booking_fee = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('20.00'),
+        help_text='One-time booking/reservation fee in Rs (default Rs 20)')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -107,13 +112,13 @@ class Reservation(models.Model):
     end_time = models.DateTimeField()
     amount = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('0.00'))
     is_paid = models.BooleanField(default=False)
-    booking_fee = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('1.00'))
+    booking_fee = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('20.00'))
     booking_fee_paid = models.BooleanField(default=False)
     checkin_time = models.DateTimeField(null=True, blank=True)
     checkout_time = models.DateTimeField(null=True, blank=True)
     final_fee = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
     final_fee_paid = models.BooleanField(default=False)
-    hourly_rate = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('2.40'))
+    hourly_rate = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('30.00'))
     status = models.CharField(max_length=40, choices=STATUS_CHOICES, default=STATUS_PENDING_BOOKING_PAYMENT)
     qr_code = models.TextField(blank=True)
     qr_image = models.ImageField(upload_to=_qr_image_upload_path, blank=True, null=True)
@@ -128,6 +133,37 @@ class Reservation(models.Model):
 
     def __str__(self):
         return f"Reservation {self.reservation_id}"
+
+
+class PaymentRecord(models.Model):
+    PAYMENT_TYPE_BOOKING = 'booking'
+    PAYMENT_TYPE_FINAL = 'final'
+    PAYMENT_TYPE_CHOICES = [
+        (PAYMENT_TYPE_BOOKING, 'Booking Fee'),
+        (PAYMENT_TYPE_FINAL, 'Final Fee'),
+    ]
+
+    reservation = models.ForeignKey(Reservation, on_delete=models.CASCADE, related_name='payments')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payments')
+    # Denormalised snapshot — preserved even if slot/space is later deleted
+    user_full_name = models.CharField(max_length=200, blank=True)
+    user_email = models.CharField(max_length=254, blank=True)
+    user_phone = models.CharField(max_length=15, blank=True)
+    slot_id = models.CharField(max_length=10, help_text='Slot identifier at time of payment')
+    slot_label = models.CharField(max_length=50, blank=True)
+    parking_space_name = models.CharField(max_length=100)
+    parking_space_location = models.TextField(blank=True)
+    payment_type = models.CharField(max_length=10, choices=PAYMENT_TYPE_CHOICES)
+    amount = models.DecimalField(max_digits=8, decimal_places=2)
+    paid_at = models.DateTimeField(auto_now_add=True)
+    transaction_ref = models.CharField(max_length=40, unique=True,
+        help_text='Internal transaction reference')
+
+    class Meta:
+        ordering = ['-paid_at']
+
+    def __str__(self):
+        return f"{self.payment_type} | {self.user_full_name} | Rs {self.amount} | {self.paid_at:%Y-%m-%d %H:%M}"
 
 
 class Gate(models.Model):

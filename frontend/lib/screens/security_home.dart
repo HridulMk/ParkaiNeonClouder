@@ -16,12 +16,23 @@ class _SecurityHomeScreenState extends State<SecurityHomeScreen> {
   bool _isBackendConnected = true;
   Timer? _connectionTimer;
   int _selectedIndex = 3; // Security - Parking List
+  String? _assignedSpaceName;
 
   @override
   void initState() {
     super.initState();
     _checkConnection();
     _connectionTimer = Timer.periodic(const Duration(seconds: 30), (_) => _checkConnection());
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final userData = await AuthService.getUserData();
+    if (mounted) {
+      setState(() {
+        _assignedSpaceName = userData?['assigned_parking_space_name'] as String?;
+      });
+    }
   }
 
   @override
@@ -99,6 +110,23 @@ class _SecurityHomeScreenState extends State<SecurityHomeScreen> {
                           'Monitor parking gates and access',
                           style: TextStyle(color: Colors.white60, fontSize: 14),
                         ),
+                        if (_assignedSpaceName != null) ...[
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              const Icon(Icons.location_on, color: Colors.blueAccent, size: 16),
+                              const SizedBox(width: 6),
+                              Text(
+                                _assignedSpaceName!,
+                                style: const TextStyle(
+                                  color: Colors.blueAccent,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   ),

@@ -32,7 +32,11 @@ class _DemoWorkingScreenState extends State<DemoWorkingScreen> with SingleTicker
   String? _processedVideoUrl;
   String? _lastErrorMessage;
   String? _sessionId;
+  String? _videoUrl;
+  String? _polygonUrl;
   List<bool> _slotStatus = [];
+  List<int> _frameData = [];
+  double _fps = 20.0;
   bool _spaceCreated = false;
   int? _createdSpaceId;
   bool _videoSaved = false;
@@ -189,6 +193,7 @@ Future<void> _saveVideo() async {
     setState(() {
       _videoSaved = true;
       _sessionId = result['session_id'];
+      _videoUrl = result['video_url'];
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -213,17 +218,24 @@ Future<void> _saveVideo() async {
       );
       return;
     }
-    final displayWidth = MediaQuery.of(context).size.width - 40;
-    final videoSize = _videoController!.value.size;
-    final displayHeight = displayWidth / videoSize.width * videoSize.height;
+    final displayWidth = _editorRenderSize.width > 0
+        ? _editorRenderSize.width
+        : MediaQuery.of(context).size.width - 40;
+    final displayHeight = _editorRenderSize.height > 0
+        ? _editorRenderSize.height
+        : displayWidth / _videoController!.value.size.width * _videoController!.value.size.height;
     final result = await ParkingService.savePolygons(
       _polygons,
       sessionId: _sessionId!,
+      videoUrl: _videoUrl!,
       displayWidth: displayWidth,
       displayHeight: displayHeight,
     );
     if (!mounted) return;
     if (result['success'] == true) {
+      setState(() {
+        _polygonUrl = result['polygon_url'] as String?;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Polygons saved successfully')),
       );
@@ -260,7 +272,11 @@ Future<void> _submitDemo() async {
   });
 
   try {
-    final jobFuture = ParkingService.runAnalysisAndWait(_sessionId!);
+    final jobFuture = ParkingService.runAnalysisAndWait(
+      _sessionId!,
+      _videoUrl!,
+      polygonUrl: _polygonUrl,
+    );
 
     // 🔥 Fake progress (safe)
     final stages = [
@@ -324,9 +340,11 @@ Future<void> _submitDemo() async {
       try {
         print("🎥 Loading video: $outputUrl");
 
-        newController = VideoPlayerController.networkUrl(Uri.parse(outputUrl));
+      newController = VideoPlayerController.networkUrl(
+        Uri.parse(outputUrl),
+        videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+      );
         await newController.initialize();
-
         print("✅ Video loaded successfully");
 
       } catch (e) {
@@ -361,6 +379,8 @@ Future<void> _submitDemo() async {
       _occupiedSlots = occupied;
       _freeSlots = free;
       _slotStatus = List.generate(total, (i) => i < occupied);
+      _frameData = List<int>.from(result['frameData'] ?? []);
+      _fps = (result['fps'] ?? 20.0).toDouble();
 
       if (newController != null) {
         _processedVideoController?.dispose();
@@ -445,7 +465,8 @@ Future<void> _submitDemo() async {
                       _buildVideoUploadSection(),
                       if (_selectedVideo != null) _buildVideoPreview(),
                       if (_selectedVideo != null) _buildSaveVideoButton(),
-                      if (_selectedVideo != null) ...[
+                      if (_selectedVideo != null && (_videoController == null || !_videoController!.value.isInitialized)) _buildVideoPreview(),
+                      if (_selectedVideo != null && _videoController != null && _videoController!.value.isInitialized) ...[
                         const SizedBox(height: 24),
                         const Text(
                           'Mark Parking Slots',
@@ -723,54 +744,17 @@ Future<void> _submitDemo() async {
           color: Colors.white.withOpacity(0.05),
           border: Border.all(color: Colors.white.withOpacity(0.1)),
         ),
-        child: Column(
+        child: Row(
           children: [
-            Text(
-              'Selected: ${_selectedVideo!.name}',
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+            const SizedBox(width: 8, height: 8, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.cyan)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Loading: ${_selectedVideo!.name}',
+                style: const TextStyle(color: Colors.white70, fontSize: 13),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-            const SizedBox(height: 12),
-            if (_videoController != null && _videoController!.value.isInitialized)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: AspectRatio(
-                  aspectRatio: _videoController!.value.aspectRatio,
-                  child: VideoPlayer(_videoController!),
-                ),
-              ),
-            if (_videoController != null && _videoController!.value.isInitialized)
-              Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      onPressed: () {
-                        setState(() {
-                          _videoController!.value.isPlaying
-                              ? _videoController!.pause()
-                              : _videoController!.play();
-                        });
-                      },
-                      icon: Icon(
-                        _videoController!.value.isPlaying ? Icons.pause : Icons.play_arrow,
-                        color: Colors.white,
-                      ),
-                    ),
-                    Expanded(
-                      child: VideoProgressIndicator(
-                        _videoController!,
-                        allowScrubbing: true,
-                        colors: const VideoProgressColors(
-                          playedColor: Colors.cyan,
-                          bufferedColor: Colors.cyanAccent,
-                          backgroundColor: Colors.white24,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
           ],
         ),
       ),
@@ -793,23 +777,62 @@ Future<void> _submitDemo() async {
             children: [
               Icon(Icons.movie_filter, color: Colors.cyan[400]),
               const SizedBox(width: 8),
-              const Text(
-                'Processed Simulation',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+              const Expanded(
+                child: Text(
+                  'Processed Simulation',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
+              if (_processedVideoController != null && _processedVideoController!.value.isInitialized)
+                IconButton(
+                  tooltip: 'Fullscreen',
+                  onPressed: () {
+                    _processedVideoController!.pause();
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => _FullscreenVideoPlayer(
+                          videoUrl: _processedVideoUrl!,
+                          occupiedSlots: _occupiedSlots,
+                          freeSlots: _freeSlots,
+                          totalSlots: _slotStatus.length,
+                          frameData: _frameData,
+                          fps: _fps,
+                        ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.fullscreen, color: Colors.white70),
+                ),
             ],
           ),
           const SizedBox(height: 12),
           if (_processedVideoController != null && _processedVideoController!.value.isInitialized) ...[
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: AspectRatio(
-                aspectRatio: _processedVideoController!.value.aspectRatio,
-                child: VideoPlayer(_processedVideoController!),
+            GestureDetector(
+              onTap: () {
+                _processedVideoController!.pause();
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => _FullscreenVideoPlayer(
+                      videoUrl: _processedVideoUrl!,
+                      occupiedSlots: _occupiedSlots,
+                      freeSlots: _freeSlots,
+                      totalSlots: _slotStatus.length,
+                      frameData: _frameData,
+                      fps: _fps,
+                    ),
+                  ),
+                );
+              },
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: AspectRatio(
+                  aspectRatio: _processedVideoController!.value.aspectRatio,
+                  child: VideoPlayer(_processedVideoController!),
+                ),
               ),
             ),
             Padding(
@@ -865,9 +888,11 @@ Future<void> _submitDemo() async {
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: () async {
-                            // Try to load video again
                             try {
-                              final controller = VideoPlayerController.networkUrl(Uri.parse(_processedVideoUrl!));
+                              final controller = VideoPlayerController.networkUrl(
+                                Uri.parse(_processedVideoUrl!),
+                                videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+                              );
                               await controller.initialize();
                               setState(() {
                                 _processedVideoController?.dispose();
@@ -1190,6 +1215,8 @@ Widget _buildResultsCard() {
   );
 }
 
+  Size _editorRenderSize = Size.zero;
+
   Widget _buildPolygonEditor() {
     final width = MediaQuery.of(context).size.width - 40;
 
@@ -1212,6 +1239,8 @@ Widget _buildResultsCard() {
 
     final videoSize = _videoController!.value.size;
     final displayHeight = width / videoSize.width * videoSize.height;
+    // Keep render size in sync synchronously here
+    _editorRenderSize = Size(width, displayHeight);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1222,16 +1251,45 @@ Widget _buildResultsCard() {
           child: PolygonEditor(
             polygons: _polygons,
             slotStatus: _slotStatus,
+            videoNativeSize: videoSize,
             onChanged: (polys) => setState(() {}),
-            background: AspectRatio(
-              aspectRatio: _videoController!.value.aspectRatio,
-              child: VideoPlayer(_videoController!),
-            ),
+            onSizeChanged: (size) => _editorRenderSize = size,
+            background: VideoPlayer(_videoController!),
           ),
         ),
         const SizedBox(height: 8),
+        Row(
+          children: [
+            IconButton(
+              onPressed: () {
+                setState(() {
+                  _videoController!.value.isPlaying
+                      ? _videoController!.pause()
+                      : _videoController!.play();
+                });
+              },
+              icon: Icon(
+                _videoController!.value.isPlaying ? Icons.pause_circle : Icons.play_circle,
+                color: Colors.cyanAccent,
+                size: 28,
+              ),
+            ),
+            Expanded(
+              child: VideoProgressIndicator(
+                _videoController!,
+                allowScrubbing: true,
+                colors: const VideoProgressColors(
+                  playedColor: Colors.cyan,
+                  bufferedColor: Colors.cyanAccent,
+                  backgroundColor: Colors.white24,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
         Text(
-          _polygons.isEmpty ? 'Tap to add points' : '${_polygons.length} zone(s) defined',
+          _polygons.isEmpty ? 'Tap on video to add points, then press Finish Polygon' : '${_polygons.length} zone(s) defined',
           style: TextStyle(
             color: Colors.white.withOpacity(0.8),
             fontSize: 13,
@@ -1393,6 +1451,8 @@ class PolygonEditor extends StatefulWidget {
   final ValueChanged<List<List<Offset>>> onChanged;
   final Widget background;
   final List<bool> slotStatus;
+  final ValueChanged<Size>? onSizeChanged;
+  final Size? videoNativeSize;
 
   const PolygonEditor({
     super.key,
@@ -1400,6 +1460,8 @@ class PolygonEditor extends StatefulWidget {
     required this.onChanged,
     required this.background,
     this.slotStatus = const [],
+    this.onSizeChanged,
+    this.videoNativeSize,
   });
 
   @override
@@ -1409,11 +1471,21 @@ class PolygonEditor extends StatefulWidget {
 class _PolygonEditorState extends State<PolygonEditor> {
   List<List<Offset>> get _polygons => widget.polygons;
   List<Offset> _currentPolygon = [];
+  final TransformationController _transformController = TransformationController();
+
+  @override
+  void dispose() {
+    _transformController.dispose();
+    super.dispose();
+  }
 
   void _handleTap(TapUpDetails details) {
-    final localPos = details.localPosition;
+    // Convert tap position from viewer space back to content space
+    final matrix = _transformController.value;
+    final inverse = Matrix4.inverted(matrix);
+    final local = MatrixUtils.transformPoint(inverse, details.localPosition);
     setState(() {
-      _currentPolygon.add(localPos);
+      _currentPolygon.add(local);
     });
   }
 
@@ -1447,28 +1519,79 @@ class _PolygonEditorState extends State<PolygonEditor> {
     return Column(
       children: [
         Expanded(
-          child: InteractiveViewer(
-            minScale: 0.7,
-            maxScale: 4.0,
-            child: GestureDetector(
-              onTapUp: _handleTap,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    widget.background,
-                    CustomPaint(
-                      painter: _PolygonPainter(
-                        polygons: _polygons,
-                        currentPolygon: _currentPolygon,
-                        slotStatus: widget.slotStatus,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                widget.onSizeChanged?.call(
+                  Size(constraints.maxWidth, constraints.maxHeight),
+                );
+              });
+              return Stack(
+                children: [
+                  InteractiveViewer(
+                    transformationController: _transformController,
+                    minScale: 1.0,
+                    maxScale: 5.0,
+                    child: GestureDetector(
+                      onTapUp: _handleTap,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: SizedBox(
+                          width: constraints.maxWidth,
+                          height: constraints.maxHeight,
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              SizedBox.expand(child: widget.background),
+                              CustomPaint(
+                                painter: _PolygonPainter(
+                                  polygons: _polygons,
+                                  currentPolygon: _currentPolygon,
+                                  slotStatus: widget.slotStatus,
+                                  // sourceSize = video native size so painter
+                                  // maps stored display-pixel coords correctly
+                                  sourceSize: null,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ),
+                  ),
+                  // Fullscreen button
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: GestureDetector(
+                      onTap: () async {
+                        await showDialog(
+                          context: context,
+                          barrierColor: Colors.black,
+                          builder: (_) => _FullscreenEditorDialog(
+                            polygons: _polygons,
+                            currentPolygon: _currentPolygon,
+                            slotStatus: widget.slotStatus,
+                            background: widget.background,
+                            onChanged: widget.onChanged,
+                            onCurrentPolygonChanged: (p) => setState(() => _currentPolygon = p),
+                          ),
+                        );
+                        setState(() {});
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Icon(Icons.fullscreen, color: Colors.white, size: 22),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ),
         const SizedBox(height: 8),
@@ -1495,102 +1618,477 @@ class _PolygonEditorState extends State<PolygonEditor> {
   }
 }
 
+class _FullscreenEditorDialog extends StatefulWidget {
+  final List<List<Offset>> polygons;
+  final List<Offset> currentPolygon;
+  final List<bool> slotStatus;
+  final Widget background;
+  final ValueChanged<List<List<Offset>>> onChanged;
+  final ValueChanged<List<Offset>> onCurrentPolygonChanged;
+
+  const _FullscreenEditorDialog({
+    required this.polygons,
+    required this.currentPolygon,
+    required this.slotStatus,
+    required this.background,
+    required this.onChanged,
+    required this.onCurrentPolygonChanged,
+  });
+
+  @override
+  State<_FullscreenEditorDialog> createState() => _FullscreenEditorDialogState();
+}
+
+class _FullscreenEditorDialogState extends State<_FullscreenEditorDialog> {
+  late List<Offset> _currentPolygon;
+  final TransformationController _transformController = TransformationController();
+
+  @override
+  void initState() {
+    super.initState();
+    _currentPolygon = List.from(widget.currentPolygon);
+  }
+
+  @override
+  void dispose() {
+    _transformController.dispose();
+    super.dispose();
+  }
+
+  void _handleTap(TapUpDetails details) {
+    final inverse = Matrix4.inverted(_transformController.value);
+    final local = MatrixUtils.transformPoint(inverse, details.localPosition);
+    setState(() => _currentPolygon.add(local));
+    widget.onCurrentPolygonChanged(_currentPolygon);
+  }
+
+  void _finishPolygon() {
+    if (_currentPolygon.length < 3) return;
+    widget.polygons.add(List.from(_currentPolygon));
+    setState(() => _currentPolygon = []);
+    widget.onChanged(widget.polygons);
+    widget.onCurrentPolygonChanged(_currentPolygon);
+  }
+
+  void _undoLastPoint() {
+    if (_currentPolygon.isEmpty) return;
+    setState(() => _currentPolygon.removeLast());
+    widget.onCurrentPolygonChanged(_currentPolygon);
+  }
+
+  void _clearAll() {
+    widget.polygons.clear();
+    setState(() => _currentPolygon = []);
+    widget.onChanged(widget.polygons);
+    widget.onCurrentPolygonChanged(_currentPolygon);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: InteractiveViewer(
+                transformationController: _transformController,
+                minScale: 1.0,
+                maxScale: 8.0,
+                child: GestureDetector(
+                  onTapUp: _handleTap,
+                  child: SizedBox.expand(
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        SizedBox.expand(child: widget.background),
+                        CustomPaint(
+                          painter: _PolygonPainter(
+                            polygons: widget.polygons,
+                            currentPolygon: _currentPolygon,
+                            slotStatus: widget.slotStatus,
+                            sourceSize: null,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Container(
+              color: const Color(0xFF0F172A),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Row(
+                children: [
+                  ElevatedButton(
+                    onPressed: _finishPolygon,
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.cyan[700]),
+                    child: const Text('Finish Polygon'),
+                  ),
+                  const SizedBox(width: 8),
+                  TextButton(
+                    onPressed: _undoLastPoint,
+                    child: const Text('Undo', style: TextStyle(color: Colors.white70)),
+                  ),
+                  const SizedBox(width: 8),
+                  TextButton(
+                    onPressed: _clearAll,
+                    child: const Text('Clear All', style: TextStyle(color: Colors.redAccent)),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '${widget.polygons.length} zone(s)',
+                    style: const TextStyle(color: Colors.white54, fontSize: 12),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.fullscreen_exit, color: Colors.white),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FullscreenVideoPlayer extends StatefulWidget {
+  final String videoUrl;
+  final int occupiedSlots;
+  final int freeSlots;
+  final int totalSlots;
+  final List<int> frameData;
+  final double fps;
+
+  const _FullscreenVideoPlayer({
+    required this.videoUrl,
+    required this.occupiedSlots,
+    required this.freeSlots,
+    required this.totalSlots,
+    required this.frameData,
+    required this.fps,
+  });
+
+  @override
+  State<_FullscreenVideoPlayer> createState() => _FullscreenVideoPlayerState();
+}
+
+class _FullscreenVideoPlayerState extends State<_FullscreenVideoPlayer> {
+  late VideoPlayerController _controller;
+  bool _initialized = false;
+  bool _showControls = true;
+  Timer? _hideTimer;
+  Timer? _syncTimer;
+  int _currentOcc = 0;
+  int _currentFree = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentOcc = widget.occupiedSlots;
+    _currentFree = widget.freeSlots;
+    _controller = VideoPlayerController.networkUrl(
+      Uri.parse(widget.videoUrl),
+      videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+    );
+    _controller.initialize().then((_) {
+      if (mounted) {
+        setState(() => _initialized = true);
+        _controller.play();
+        _scheduleHideControls();
+        _startSyncTimer();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _hideTimer?.cancel();
+    _syncTimer?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _startSyncTimer() {
+    if (widget.frameData.isEmpty) return;
+    _syncTimer = Timer.periodic(const Duration(milliseconds: 100), (_) {
+      if (!mounted) return;
+      final posMs = _controller.value.position.inMilliseconds;
+      final frameIndex = ((posMs / 1000.0) * widget.fps).floor()
+          .clamp(0, widget.frameData.length - 1);
+      final occ = widget.frameData[frameIndex];
+      final free = widget.totalSlots - occ;
+      if (occ != _currentOcc || free != _currentFree) {
+        setState(() {
+          _currentOcc = occ;
+          _currentFree = free;
+        });
+      }
+    });
+  }
+
+  void _scheduleHideControls() {
+    _hideTimer?.cancel();
+    _hideTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) setState(() => _showControls = false);
+    });
+  }
+
+  void _toggleControls() {
+    setState(() => _showControls = !_showControls);
+    if (_showControls) _scheduleHideControls();
+  }
+
+  void _togglePlay() {
+    setState(() {
+      _controller.value.isPlaying ? _controller.pause() : _controller.play();
+    });
+    _scheduleHideControls();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: GestureDetector(
+          onTap: _toggleControls,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Video
+              Center(
+                child: _initialized
+                    ? AspectRatio(
+                        aspectRatio: _controller.value.aspectRatio,
+                        child: VideoPlayer(_controller),
+                      )
+                    : const CircularProgressIndicator(color: Colors.cyan),
+              ),
+
+              // Top bar — always visible
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Colors.black87, Colors.transparent],
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      ),
+                      const Expanded(
+                        child: Text(
+                          'AI Analysis Result',
+                          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.8),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'OCC: $_currentOcc',
+                          style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.8),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'FREE: $_currentFree',
+                          style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Centre and bottom — auto-hide with controls
+              if (_showControls) ...[
+                // Centre play/pause
+                Center(
+                  child: GestureDetector(
+                    onTap: _togglePlay,
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: const BoxDecoration(
+                        color: Colors.black54,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        _controller.value.isPlaying ? Icons.pause : Icons.play_arrow,
+                        color: Colors.white,
+                        size: 40,
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Bottom bar
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 12),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                        colors: [Colors.black87, Colors.transparent],
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        VideoProgressIndicator(
+                          _controller,
+                          allowScrubbing: true,
+                          colors: const VideoProgressColors(
+                            playedColor: Colors.cyan,
+                            bufferedColor: Colors.white38,
+                            backgroundColor: Colors.white24,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            IconButton(
+                              onPressed: _togglePlay,
+                              icon: Icon(
+                                _controller.value.isPlaying ? Icons.pause : Icons.play_arrow,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              _formatDuration(_controller.value.position),
+                              style: const TextStyle(color: Colors.white70, fontSize: 12),
+                            ),
+                            const Text(' / ', style: TextStyle(color: Colors.white38, fontSize: 12)),
+                            Text(
+                              _formatDuration(_controller.value.duration),
+                              style: const TextStyle(color: Colors.white70, fontSize: 12),
+                            ),
+                            const Spacer(),
+                            IconButton(
+                              onPressed: () => Navigator.pop(context),
+                              icon: const Icon(Icons.fullscreen_exit, color: Colors.white),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatDuration(Duration d) {
+    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$m:$s';
+  }
+}
+
 class _PolygonPainter extends CustomPainter {
   final List<List<Offset>> polygons;
   final List<Offset> currentPolygon;
-  final List<bool> slotStatus; // true = occupied, false = free
+  final List<bool> slotStatus;
+  final Size? sourceSize;
 
   _PolygonPainter({
     required this.polygons,
     required this.currentPolygon,
     required this.slotStatus,
+    this.sourceSize,
   });
 
- @override
-void paint(Canvas canvas, Size size) {
-  for (int i = 0; i < polygons.length; i++) {
-    final poly = polygons[i];
+  @override
+  void paint(Canvas canvas, Size size) {
+    final scaleX = sourceSize != null && sourceSize!.width > 0 ? size.width / sourceSize!.width : 1.0;
+    final scaleY = sourceSize != null && sourceSize!.height > 0 ? size.height / sourceSize!.height : 1.0;
 
-    if (poly.length < 2) continue;
+    Offset _scale(Offset p) => Offset(p.dx * scaleX, p.dy * scaleY);
+    List<Offset> _scalePoly(List<Offset> poly) => poly.map(_scale).toList();
 
-    // ✅ Get slot status safely
-    final isOccupied =
-        (i < slotStatus.length) ? slotStatus[i] : false;
+    for (int i = 0; i < polygons.length; i++) {
+      final poly = _scalePoly(polygons[i]);
+      if (poly.length < 2) continue;
 
-    // ✅ Dynamic color based on AI result
-    final fillPaint = Paint()
-      ..color = isOccupied
-          ? Colors.red.withOpacity(0.4)
-          : Colors.green.withOpacity(0.4)
-      ..style = PaintingStyle.fill;
+      final isOccupied = (i < slotStatus.length) ? slotStatus[i] : false;
 
-    final borderPaint = Paint()
-      ..color = isOccupied ? Colors.red : Colors.green
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
+      final fillPaint = Paint()
+        ..color = isOccupied ? Colors.red.withOpacity(0.4) : Colors.green.withOpacity(0.4)
+        ..style = PaintingStyle.fill;
 
-    final path = Path()..addPolygon(poly, true);
+      final borderPaint = Paint()
+        ..color = isOccupied ? Colors.red : Colors.green
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2;
 
-canvas.drawPath(path, fillPaint);
-canvas.drawPath(path, borderPaint);
+      final path = Path()..addPolygon(poly, true);
+      canvas.drawPath(path, fillPaint);
+      canvas.drawPath(path, borderPaint);
 
-// ✅ Calculate center of polygon
-double centerX = 0;
-double centerY = 0;
+      double cx = poly.fold<double>(0.0, (s, p) => s + p.dx) / poly.length;
+      double cy = poly.fold<double>(0.0, (s, p) => s + p.dy) / poly.length;
 
-for (final p in poly) {
-  centerX += p.dx;
-  centerY += p.dy;
-}
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: 'S${i + 1}',
+          style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      textPainter.paint(canvas, Offset(cx - textPainter.width / 2, cy - textPainter.height / 2));
+    }
 
-centerX /= poly.length;
-centerY /= poly.length;
-
-// ✅ Draw slot number text
-final textPainter = TextPainter(
-  text: TextSpan(
-    text: 'S${i + 1}', // Slot number
-    style: TextStyle(
-      color: Colors.white,
-      fontSize: 14,
-      fontWeight: FontWeight.bold,
-    ),
-  ),
-  textDirection: TextDirection.ltr,
-);
-
-textPainter.layout();
-
-// Center text
-final offset = Offset(
-  centerX - textPainter.width / 2,
-  centerY - textPainter.height / 2,
-);
-
-textPainter.paint(canvas, offset);
-  }
-
-  // ✏️ Drawing current polygon (while user is marking)
-  if (currentPolygon.isNotEmpty) {
-    final path = Path()..addPolygon(currentPolygon, false);
-
-    final currentPaint = Paint()
-      ..color = const Color(0xFF38BDF8)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-
-    canvas.drawPath(path, currentPaint);
-
-    for (final p in currentPolygon) {
-      canvas.drawCircle(p, 4, Paint()..color = const Color(0xFF38BDF8));
+    if (currentPolygon.isNotEmpty) {
+      final scaled = currentPolygon.map(_scale).toList();
+      final path = Path()..addPolygon(scaled, false);
+      canvas.drawPath(path, Paint()
+        ..color = const Color(0xFF38BDF8)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2);
+      for (final p in scaled) {
+        canvas.drawCircle(p, 4, Paint()..color = const Color(0xFF38BDF8));
+      }
     }
   }
-}
 
   @override
   bool shouldRepaint(covariant _PolygonPainter oldDelegate) {
     return oldDelegate.polygons != polygons ||
         oldDelegate.currentPolygon != currentPolygon ||
-        oldDelegate.slotStatus != slotStatus;
+        oldDelegate.slotStatus != slotStatus ||
+        oldDelegate.sourceSize != sourceSize;
   }
 }

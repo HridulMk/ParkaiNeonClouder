@@ -13,6 +13,7 @@ router.register(r'reservations', views.ReservationViewSet)
 router.register(r'gates', views.GateViewSet)
 router.register(r'cctv', views.CCTVFeedViewSet)
 router.register(r'vehicle-logs', views.VehicleLogViewSet)
+router.register(r'payments', views.PaymentRecordViewSet, basename='payments')
 
 urlpatterns = [
     path('', include(router.urls)),

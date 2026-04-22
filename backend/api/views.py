@@ -4,8 +4,9 @@ import io
 import json
 import os
 import uuid
-from concurrent.futures import ThreadPoolExecutor
-
+import requests
+import tempfile
+import cloudinary.uploader
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.db import transaction
@@ -19,17 +20,16 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework import status
-from concurrent.futures import ThreadPoolExecutor
 import qrcode
 
-from .models import CCTVFeed, Gate, ParkingSlot, ParkingSpace, Reservation, User, VehicleLog
+from .models import CCTVFeed, Gate, ParkingSlot, ParkingSpace, PaymentRecord, Reservation, User, VehicleLog
 from .permissions import IsAdminUserType, IsVendorOrAdmin
 from .realtime import notify_slot_update
 from .serializers import (
     CCTVFeedSerializer,
     CustomTokenObtainPairSerializer,
     GateSerializer,
+    PaymentRecordSerializer,
     ParkingSlotSerializer,
     ParkingSpaceCreateSerializer,
     ParkingSpaceSerializer,
@@ -39,8 +39,17 @@ from .serializers import (
     VehicleLogSerializer,
 )
 
-BOOKING_FEE = Decimal('1.00')
-HOURLY_RATE = Decimal('2.40')
+# Fallback rates — actual rates are read from ParkingSpace per reservation
+DEFAULT_BOOKING_FEE = Decimal('20.00')   # Rs 20 reservation fee
+DEFAULT_HOURLY_RATE = Decimal('30.00')   # Rs 30 / hour
+
+# Vehicle-type multipliers applied on top of the space hourly rate
+VEHICLE_RATE_MULTIPLIER = {
+    'suv':      Decimal('1.50'),   # SUV  → 1.5x
+    'pickup':   Decimal('1.40'),   # Pickup → 1.4x
+    'sedan':    Decimal('1.00'),   # Sedan  → 1.0x (base)
+    'hatchback':Decimal('0.85'),   # Hatchback → 0.85x
+}
 
 
 def _generate_qr_image(reservation):
@@ -86,6 +95,14 @@ def _create_pending_reservation(user, slot, vehicle_number=None, vehicle_type=No
     if slot.is_occupied or _active_booking_exists(slot):
         return Response({'detail': 'Slot is not available for booking.'}, status=status.HTTP_400_BAD_REQUEST)
 
+    # Pull rates from the parking space (with fallback)
+    space_booking_fee = slot.space.booking_fee if slot.space.booking_fee else DEFAULT_BOOKING_FEE
+    space_hourly_rate = slot.space.hourly_rate if slot.space.hourly_rate else DEFAULT_HOURLY_RATE
+
+    # Apply vehicle-type multiplier to hourly rate
+    multiplier = VEHICLE_RATE_MULTIPLIER.get((vehicle_type or '').lower(), Decimal('1.00'))
+    effective_hourly_rate = (space_hourly_rate * multiplier).quantize(Decimal('0.01'))
+
     now = timezone.now()
     reservation = Reservation.objects.create(
         user=user,
@@ -95,9 +112,9 @@ def _create_pending_reservation(user, slot, vehicle_number=None, vehicle_type=No
         end_time=now,
         amount=Decimal('0.00'),
         is_paid=False,
-        booking_fee=BOOKING_FEE,
+        booking_fee=space_booking_fee,
         booking_fee_paid=False,
-        hourly_rate=HOURLY_RATE,
+        hourly_rate=effective_hourly_rate,
         vehicle_number=vehicle_number or '',
         vehicle_type=vehicle_type or '',
         status=Reservation.STATUS_PENDING_BOOKING_PAYMENT,
@@ -267,6 +284,7 @@ class ParkingSpaceCCTVUploadEndpoint(APIView):
 
 
 
+
 class ParkingLotSaveVideoEndpoint(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
@@ -280,55 +298,41 @@ class ParkingLotSaveVideoEndpoint(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # ✅ Generate unique session ID
+        # ✅ Generate session ID
         session_id = uuid.uuid4().hex
 
-        # ✅ Base upload directory
-        base_upload_dir = os.path.join(settings.MEDIA_ROOT, 'parking_uploads')
-        os.makedirs(base_upload_dir, exist_ok=True)
-
-        # ✅ Create session folder
-        session_dir = os.path.join(base_upload_dir, session_id)
-        os.makedirs(session_dir, exist_ok=True)
-
-        # ✅ Preserve original extension
-        ext = os.path.splitext(file_obj.name)[1] or ".mp4"
-
-        video_filename = f"input{ext}"
-        video_path = os.path.join(session_dir, video_filename)
-
-        print("📁 Saving video to:", video_path)
-
         try:
-            with open(video_path, 'wb+') as f:
-                for chunk in file_obj.chunks():
-                    f.write(chunk)
-        except OSError as e:
-            return Response(
-                {'detail': f'Failed to save video: {str(e)}'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            # ✅ Upload to Cloudinary
+            result = cloudinary.uploader.upload_large(
+                file_obj,
+                resource_type="video",
+                folder=f"parking_uploads/{session_id}"
             )
 
-        # ✅ Get file size safely
-        size = os.path.getsize(video_path)
+            video_url = result.get('secure_url')
+            public_id = result.get('public_id')
+
+        except Exception as e:
+            return Response(
+                {'detail': f'Cloudinary upload failed: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
         return Response({
             'success': True,
             'session_id': session_id,
-            'video_path': f"parking_uploads/{session_id}/{video_filename}",
-            'size': size
+            'video_url': video_url,
+            'public_id': public_id
         }, status=status.HTTP_200_OK)
 
 
 
 
-
 class ParkingLotRunAnalysisEndpoint(APIView):
-    """Run YOLO analysis using session_id (media folder based)."""
-    permission_classes = []  # add IsAuthenticated if needed
+    permission_classes = []
 
     def post(self, request):
-        session_id = request.data.get('session_id') or request.POST.get('session_id')
+        session_id = request.data.get('session_id')
 
         if not session_id:
             return Response(
@@ -336,73 +340,115 @@ class ParkingLotRunAnalysisEndpoint(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # 📂 Session directory
-        session_dir = os.path.join(settings.MEDIA_ROOT, 'parking_uploads', session_id)
-
         print("\n🚀 RUN ANALYSIS START")
         print("📌 Session ID:", session_id)
-        print("📂 Session dir:", session_dir)
 
-        if not os.path.exists(session_dir):
+        # ✅ Get Cloudinary video URL from request
+        video_url = request.data.get('video_url')
+
+        if not video_url:
             return Response(
-                {'success': False, 'error': 'Session folder not found.'},
+                {'success': False, 'error': 'video_url is required.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        files = os.listdir(session_dir)
-        print("📂 Files in session:", files)
-
-        # ✅ Check video exists
-        video_exists = any(f.lower().endswith(('.mp4', '.avi', '.mov')) for f in files)
-        if not video_exists:
-            return Response(
-                {'success': False, 'error': 'No video file found in session.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # ✅ Check polygons
-        if 'polygons.json' not in files:
-            return Response(
-                {'success': False, 'error': 'polygons.json not found.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        # ✅ Local temp working directory
+        temp_dir = tempfile.mkdtemp()
+        input_video_path = os.path.join(temp_dir, "input.mp4")
 
         try:
+            # ✅ Download video from Cloudinary
+            print("⬇️ Downloading video from Cloudinary...")
+            response = requests.get(video_url, stream=True)
+
+            if response.status_code != 200:
+                return Response(
+                    {'success': False, 'error': 'Failed to download video.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            with open(input_video_path, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
+
+            # ✅ Resolve polygons: prefer Cloudinary URL, fall back to local file
+            polygon_url = request.data.get('polygon_url')
+            polygons_path = os.path.join(
+                settings.MEDIA_ROOT,
+                'parking_uploads',
+                session_id,
+                'polygons.json'
+            )
+
+            if polygon_url:
+                print('⬇️ Downloading polygons from Cloudinary...')
+                poly_resp = requests.get(polygon_url)
+                if poly_resp.status_code == 200:
+                    os.makedirs(os.path.dirname(polygons_path), exist_ok=True)
+                    with open(polygons_path, 'wb') as f:
+                        f.write(poly_resp.content)
+                else:
+                    return Response(
+                        {'success': False, 'error': 'Failed to download polygons from Cloudinary.'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+            elif not os.path.exists(polygons_path):
+                return Response(
+                    {'success': False, 'error': 'polygons.json not found.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # ✅ Run YOLO
             from .process_video import process_video
 
-            print("⚙️ Starting YOLO processing...")
+            print("⚙️ Running YOLO...")
+            result = process_video(
+                session_id=session_id,
+                input_path=input_video_path,
+                polygons_path=polygons_path,
+                output_dir=temp_dir
+            )
 
-            # 🚀 Run processing (thread)
-            with ThreadPoolExecutor(max_workers=1) as executor:
-                future = executor.submit(process_video, session_id)
-                result = future.result()
-
-            print("📦 PROCESS RESULT:", result)
-
-        except Exception as exc:
+        except Exception as e:
             import traceback
             traceback.print_exc()
-
             return Response(
-                {'success': False, 'error': str(exc)},
+                {'success': False, 'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-        # ❌ If processing failed
         if not result.get("success"):
             return Response(result, status=status.HTTP_400_BAD_REQUEST)
 
-        # ✅ 🔥 FIX: Get output directly from process_video
         output_path = result.get("output_path")
-        output_url = result.get("output_url")
 
-        print("📤 Output path:", output_path)
-        print("🌐 Output URL:", output_url)
-
-        # Extra safety (optional)
         if not output_path or not os.path.exists(output_path):
             return Response(
-                {'success': False, 'error': 'Output video not found after processing.'},
+                {'success': False, 'error': 'Output video not found.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        # ✅ Upload processed video to Cloudinary with H.264 transcoding
+        try:
+            print("☁️ Uploading processed video to Cloudinary...")
+            upload_result = cloudinary.uploader.upload_large(
+                output_path,
+                resource_type="video",
+                folder=f"parking_results/{session_id}",
+                eager=[{"format": "mp4", "video_codec": "h264"}],
+                eager_async=False,
+            )
+
+            # Prefer the eager H.264 URL; fall back to the raw upload URL
+            eager = upload_result.get("eager")
+            if eager and len(eager) > 0:
+                output_url = eager[0].get("secure_url")
+            else:
+                output_url = upload_result.get("secure_url")
+
+        except Exception as e:
+            return Response(
+                {'success': False, 'error': f'Cloudinary upload failed: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
@@ -411,6 +457,8 @@ class ParkingLotRunAnalysisEndpoint(APIView):
             'occupied': result.get('occupied', 0),
             'free': result.get('free', 0),
             'total': result.get('total', 0),
+            'fps': result.get('fps', 20.0),
+            'frame_data': result.get('frame_data', []),
             'output_video_url': output_url,
         }, status=status.HTTP_200_OK)
         
@@ -435,7 +483,7 @@ class ParkingLotPolygonsEndpoint(APIView):
         try:
             with open(polygons_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-        except (json.JSONDecodeError, OSError, ValueError):
+        except Exception:
             return Response({'polygons': []}, status=status.HTTP_200_OK)
 
         polygons = data.get('polygons', data) if isinstance(data, dict) else data
@@ -443,10 +491,18 @@ class ParkingLotPolygonsEndpoint(APIView):
 
     def post(self, request):
         session_id = request.data.get('session_id')
+        video_url = request.data.get('video_url')  # ✅ NEW
 
         if not session_id:
             return Response(
                 {'detail': 'session_id is required.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # 🔥 NEW: Ensure video exists (Cloudinary)
+        if not video_url:
+            return Response(
+                {'detail': 'video_url is required. Upload video first.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -457,30 +513,18 @@ class ParkingLotPolygonsEndpoint(APIView):
             try:
                 polygons = json.loads(polygons)
             except json.JSONDecodeError:
-                return Response(
-                    {'detail': 'Invalid polygons JSON.'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+                return Response({'detail': 'Invalid polygons JSON.'}, status=status.HTTP_400_BAD_REQUEST)
 
         if not polygons:
-            return Response(
-                {'detail': 'Polygons data is required.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({'detail': 'Polygons data is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
         if not isinstance(polygons, list):
-            return Response(
-                {'detail': '"polygons" must be a list.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({'detail': '"polygons" must be a list.'}, status=status.HTTP_400_BAD_REQUEST)
 
         # ✅ Validate structure
         for poly in polygons:
             if not isinstance(poly, list) or len(poly) < 3:
-                return Response(
-                    {'detail': 'Each polygon must have at least 3 points.'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+                return Response({'detail': 'Each polygon must have at least 3 points.'}, status=status.HTTP_400_BAD_REQUEST)
 
             for point in poly:
                 if (
@@ -489,35 +533,13 @@ class ParkingLotPolygonsEndpoint(APIView):
                     not isinstance(point[0], (int, float)) or
                     not isinstance(point[1], (int, float))
                 ):
-                    return Response(
-                        {'detail': 'Each point must be [x, y] numeric.'},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
+                    return Response({'detail': 'Each point must be [x, y] numeric.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # ✅ Session directory
+        # ✅ Local storage ONLY for polygons (safe)
         session_dir = os.path.join(settings.MEDIA_ROOT, 'parking_uploads', session_id)
-
-        # 🔥 IMPORTANT: Ensure session exists
-        if not os.path.exists(session_dir):
-            return Response(
-                {'detail': 'Session not found. Please upload video first.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # 🔥 IMPORTANT: Ensure video exists
-        video_exists = any(
-            f.startswith("input") for f in os.listdir(session_dir)
-        )
-
-        if not video_exists:
-            return Response(
-                {'detail': 'Video not found in session. Save video first.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        os.makedirs(session_dir, exist_ok=True)
 
         polygons_path = os.path.join(session_dir, 'polygons.json')
-
-        print("📁 Saving polygons to:", polygons_path)
 
         display_width = float(request.data.get('display_width') or 0)
         display_height = float(request.data.get('display_height') or 0)
@@ -537,13 +559,29 @@ class ParkingLotPolygonsEndpoint(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+        # Upload polygons.json to Cloudinary as a raw file
+        polygon_url = None
+        try:
+            upload_result = cloudinary.uploader.upload(
+                polygons_path,
+                resource_type='raw',
+                folder=f'parking_uploads/{session_id}',
+                public_id='polygons',
+                overwrite=True,
+            )
+            polygon_url = upload_result.get('secure_url')
+            print(f'☁️ Polygons uploaded to Cloudinary: {polygon_url}')
+        except Exception as e:
+            print(f'⚠️ Cloudinary polygon upload failed (local fallback active): {e}')
+
         return Response({
             'success': True,
             'session_id': session_id,
             'message': 'Polygons saved successfully',
-            'path': f'parking_uploads/{session_id}/polygons.json',
-            'count': len(polygons)
+            'count': len(polygons),
+            'polygon_url': polygon_url,
         }, status=status.HTTP_200_OK)
+        
 class ParkingSlotActivateEndpoint(APIView):
     permission_classes = [IsAuthenticated, IsAdminUserType]
 
@@ -745,6 +783,11 @@ class ReservationViewSet(viewsets.ModelViewSet):
         if user.user_type == 'vendor':
             return queryset.filter(slot__space__vendor=user)
 
+        if user.user_type == 'security':
+            if user.assigned_parking_space_id:
+                return queryset.filter(slot__space_id=user.assigned_parking_space_id)
+            return queryset.none()
+
         return queryset.filter(user=user)
 
     @action(detail=False, methods=['post'], url_path='scan')
@@ -818,26 +861,42 @@ class ReservationViewSet(viewsets.ModelViewSet):
         if reservation.booking_fee_paid:
             return Response({'error': 'Booking payment already completed.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if reservation.slot.is_occupied or _active_booking_exists(reservation.slot):
-            # allow current reservation itself
-            others = Reservation.objects.filter(
-                slot=reservation.slot,
-                status__in=[Reservation.STATUS_RESERVED, Reservation.STATUS_CHECKED_IN],
-            ).exclude(id=reservation.id)
-            if others.exists():
-                return Response({'error': 'Slot is no longer available for booking.'}, status=status.HTTP_400_BAD_REQUEST)
+        others = Reservation.objects.filter(
+            slot=reservation.slot,
+            status__in=[Reservation.STATUS_RESERVED, Reservation.STATUS_CHECKED_IN],
+        ).exclude(id=reservation.id)
+        if others.exists():
+            return Response({'error': 'Slot is no longer available for booking.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        reservation.booking_fee_paid = True
-        reservation.status = Reservation.STATUS_RESERVED
-        reservation.qr_code = f"BOOKING|{reservation.slot.slot_id}|{reservation.reservation_id}"
-        _generate_qr_image(reservation)
-        reservation.save(update_fields=['booking_fee_paid', 'status', 'qr_code', 'qr_image'])
+        with transaction.atomic():
+            reservation.booking_fee_paid = True
+            reservation.status = Reservation.STATUS_RESERVED
+            reservation.qr_code = f"BOOKING|{reservation.slot.slot_id}|{reservation.reservation_id}"
+            _generate_qr_image(reservation)
+            reservation.save(update_fields=['booking_fee_paid', 'status', 'qr_code', 'qr_image'])
 
-        reservation.slot.is_occupied = True
-        reservation.slot.save(update_fields=['is_occupied'])
+            reservation.slot.is_occupied = True
+            reservation.slot.save(update_fields=['is_occupied'])
+
+            user = reservation.user
+            slot = reservation.slot
+            PaymentRecord.objects.create(
+                reservation=reservation,
+                user=user,
+                user_full_name=f"{user.first_name} {user.last_name}".strip() or user.username,
+                user_email=user.email,
+                user_phone=user.phone,
+                slot_id=slot.slot_id,
+                slot_label=slot.label,
+                parking_space_name=slot.space.name,
+                parking_space_location=slot.space.location,
+                payment_type=PaymentRecord.PAYMENT_TYPE_BOOKING,
+                amount=reservation.booking_fee,
+                transaction_ref=f"BKG-{reservation.reservation_id}",
+            )
+
         notify_slot_update(reservation.slot.space_id, reason='booking_paid')
-
-        return Response(self.get_serializer(reservation).data, status=status.HTTP_200_OK)
+        return Response(ReservationSerializer(reservation).data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'])
     def checkin(self, request, pk=None):
@@ -888,12 +947,31 @@ class ReservationViewSet(viewsets.ModelViewSet):
         if reservation.final_fee_paid:
             return Response({'error': 'Final fee is already paid.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        reservation.final_fee_paid = True
-        reservation.is_paid = True
-        reservation.status = Reservation.STATUS_COMPLETED
-        reservation.save(update_fields=['final_fee_paid', 'is_paid', 'status'])
+        with transaction.atomic():
+            reservation.final_fee_paid = True
+            reservation.is_paid = True
+            reservation.amount = reservation.final_fee
+            reservation.status = Reservation.STATUS_COMPLETED
+            reservation.save(update_fields=['final_fee_paid', 'is_paid', 'amount', 'status'])
 
-        return Response(self.get_serializer(reservation).data, status=status.HTTP_200_OK)
+            user = reservation.user
+            slot = reservation.slot
+            PaymentRecord.objects.create(
+                reservation=reservation,
+                user=user,
+                user_full_name=f"{user.first_name} {user.last_name}".strip() or user.username,
+                user_email=user.email,
+                user_phone=user.phone,
+                slot_id=slot.slot_id,
+                slot_label=slot.label,
+                parking_space_name=slot.space.name,
+                parking_space_location=slot.space.location,
+                payment_type=PaymentRecord.PAYMENT_TYPE_FINAL,
+                amount=reservation.final_fee,
+                transaction_ref=f"FIN-{reservation.reservation_id}",
+            )
+
+        return Response(ReservationSerializer(reservation).data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'])
     def pay(self, request, pk=None):
@@ -1012,6 +1090,25 @@ class VehicleImageProcessEndpoint(APIView):
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
+
+
+class PaymentRecordViewSet(viewsets.ReadOnlyModelViewSet):
+    """Read-only endpoint. Customers see their own payments; admin/vendor see all."""
+    serializer_class = PaymentRecordSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        qs = PaymentRecord.objects.select_related('reservation', 'user').all()
+        if user.user_type in ('admin',) or user.is_staff:
+            return qs
+        if user.user_type == 'vendor':
+            return qs.filter(reservation__slot__space__vendor=user)
+        if user.user_type == 'security':
+            if user.assigned_parking_space_id:
+                return qs.filter(reservation__slot__space_id=user.assigned_parking_space_id)
+            return qs.none()
+        return qs.filter(user=user)
 
 
 

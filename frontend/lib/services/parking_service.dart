@@ -281,7 +281,8 @@ class ParkingService {
       return {
         'success': true,
         'size': response['size'],
-        'session_id': response['session_id']
+        'session_id': response['session_id'],
+        'video_url': response['video_url'], 
       };
     }
 
@@ -299,6 +300,7 @@ class ParkingService {
 
   static Future<Map<String, dynamic>> savePolygons(List<List<Offset>> polygons, {
     required String sessionId,
+    required String videoUrl,
     double displayWidth = 0,
     double displayHeight = 0,
   }) async {
@@ -308,6 +310,7 @@ class ParkingService {
           .toList();
       final fields = <String, String>{
         'session_id': sessionId,
+        'video_url': videoUrl,
         'polygons': jsonEncode(payloadPolygons),
         'display_width': displayWidth.toString(),
         'display_height': displayHeight.toString(),
@@ -318,7 +321,11 @@ class ParkingService {
         fields: fields,
       );
       if (response is Map<String, dynamic>) {
-        return {'success': true, 'polygons': response['polygons']};
+        return {
+          'success': true,
+          'polygons': response['polygons'],
+          'polygon_url': response['polygon_url'],
+        };
       }
       return {'success': false, 'error': 'Unexpected response from server'};
     } catch (e) {
@@ -356,64 +363,61 @@ class ParkingService {
     return '$base${url.startsWith('/') ? '' : '/'}$url';
   }
 
-  static Future<Map<String, dynamic>> runAnalysisAndWait(String sessionId) async {
-  try {
-    print("🚀 Running analysis for session: $sessionId");
+  static Future<Map<String, dynamic>> runAnalysisAndWait(
+    String sessionId,
+    String videoUrl, {
+    String? polygonUrl,
+  }) async {
+    try {
+      print("\u1f680 Running analysis for session: $sessionId");
 
-    final response = await ApiService.post(
-      'parking-lot/run-analysis/',
-      auth: true,
-      body: {'session_id': sessionId},
-      timeout: const Duration(minutes: 5),
-    );
-
-    print("🔥 RAW RESPONSE: $response");
-
-    // ✅ Ensure correct format
-    if (response is! Map<String, dynamic>) {
-      return {
-        'success': false,
-        'error': 'Invalid server response'
+      final body = <String, dynamic>{
+        'session_id': sessionId,
+        'video_url': videoUrl,
+        if (polygonUrl != null) 'polygon_url': polygonUrl,
       };
-    }
 
-    // ✅ FIX: correct error key
-    if (response['success'] == false) {
+      final response = await ApiService.post(
+        'parking-lot/run-analysis/',
+        auth: true,
+        body: body,
+        timeout: const Duration(minutes: 5),
+      );
+
+      print("\uD83D\uDD25 RAW RESPONSE: $response");
+
+      if (response is! Map<String, dynamic>) {
+        return {'success': false, 'error': 'Invalid server response'};
+      }
+
+      if (response['success'] == false) {
+        return {'success': false, 'error': response['error'] ?? 'Server error occurred'};
+      }
+
+      var outputUrl = response['output_video_url']?.toString();
+
+      if (outputUrl == null || outputUrl.isEmpty) {
+        return {'success': false, 'error': 'Output video not generated'};
+      }
+
+      if (!outputUrl.startsWith('http')) {
+        outputUrl = _normalizeMediaUrl(outputUrl);
+      }
+
       return {
-        'success': false,
-        'error': response['error'] ?? 'Server error occurred'
+        'success': true,
+        'outputVideoUrl': outputUrl,
+        'occupied': response['occupied'] ?? 0,
+        'free': response['free'] ?? 0,
+        'total': response['total'] ?? 0,
+        'fps': (response['fps'] ?? 20.0).toDouble(),
+        'frameData': List<int>.from(response['frame_data'] ?? []),
       };
+    } catch (e) {
+      print("\u274C ERROR in runAnalysis: $e");
+      return {'success': false, 'error': e.toString().replaceFirst('Exception: ', '')};
     }
-
-    // ✅ Safe parsing
-    var outputUrl = response['output_video_url']?.toString();
-
-    if (outputUrl == null || outputUrl.isEmpty) {
-      return {
-        'success': false,
-        'error': 'Output video not generated'
-      };
-    }
-
-    outputUrl = _normalizeMediaUrl(outputUrl);
-
-    return {
-      'success': true,
-      'outputVideoUrl': outputUrl,
-      'occupied': response['occupied'] ?? 0,
-      'free': response['free'] ?? 0,
-      'total': response['total'] ?? 0,
-    };
-
-  } catch (e) {
-    print("❌ ERROR in runAnalysis: $e");
-
-    return {
-      'success': false,
-      'error': e.toString().replaceFirst('Exception: ', ''),
-    };
   }
-}
 
 
 

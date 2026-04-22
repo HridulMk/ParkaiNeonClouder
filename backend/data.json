@@ -1,0 +1,5824 @@
+﻿[
+{
+  "model": "admin.logentry",
+  "pk": 1,
+  "fields": {
+    "action_time": "2026-03-09T07:13:16.977Z",
+    "user": 5,
+    "content_type": 6,
+    "object_id": "10",
+    "object_repr": "customer_test (customer)",
+    "action_flag": 2,
+    "change_message": "[{\"changed\": {\"fields\": [\"Active\"]}}]"
+  }
+},
+{
+  "model": "admin.logentry",
+  "pk": 2,
+  "fields": {
+    "action_time": "2026-03-24T14:44:18.271Z",
+    "user": 5,
+    "content_type": 6,
+    "object_id": "13",
+    "object_repr": "security@gmail.com (security)",
+    "action_flag": 1,
+    "change_message": "[{\"added\": {}}]"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1,
+  "fields": {
+    "name": "Can add log entry",
+    "content_type": 1,
+    "codename": "add_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2,
+  "fields": {
+    "name": "Can change log entry",
+    "content_type": 1,
+    "codename": "change_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 3,
+  "fields": {
+    "name": "Can delete log entry",
+    "content_type": 1,
+    "codename": "delete_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 4,
+  "fields": {
+    "name": "Can view log entry",
+    "content_type": 1,
+    "codename": "view_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 5,
+  "fields": {
+    "name": "Can add permission",
+    "content_type": 2,
+    "codename": "add_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 6,
+  "fields": {
+    "name": "Can change permission",
+    "content_type": 2,
+    "codename": "change_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 7,
+  "fields": {
+    "name": "Can delete permission",
+    "content_type": 2,
+    "codename": "delete_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 8,
+  "fields": {
+    "name": "Can view permission",
+    "content_type": 2,
+    "codename": "view_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 9,
+  "fields": {
+    "name": "Can add group",
+    "content_type": 3,
+    "codename": "add_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 10,
+  "fields": {
+    "name": "Can change group",
+    "content_type": 3,
+    "codename": "change_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 11,
+  "fields": {
+    "name": "Can delete group",
+    "content_type": 3,
+    "codename": "delete_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 12,
+  "fields": {
+    "name": "Can view group",
+    "content_type": 3,
+    "codename": "view_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 13,
+  "fields": {
+    "name": "Can add content type",
+    "content_type": 4,
+    "codename": "add_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 14,
+  "fields": {
+    "name": "Can change content type",
+    "content_type": 4,
+    "codename": "change_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 15,
+  "fields": {
+    "name": "Can delete content type",
+    "content_type": 4,
+    "codename": "delete_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 16,
+  "fields": {
+    "name": "Can view content type",
+    "content_type": 4,
+    "codename": "view_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 17,
+  "fields": {
+    "name": "Can add session",
+    "content_type": 5,
+    "codename": "add_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 18,
+  "fields": {
+    "name": "Can change session",
+    "content_type": 5,
+    "codename": "change_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 19,
+  "fields": {
+    "name": "Can delete session",
+    "content_type": 5,
+    "codename": "delete_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 20,
+  "fields": {
+    "name": "Can view session",
+    "content_type": 5,
+    "codename": "view_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 21,
+  "fields": {
+    "name": "Can add user",
+    "content_type": 6,
+    "codename": "add_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 22,
+  "fields": {
+    "name": "Can change user",
+    "content_type": 6,
+    "codename": "change_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 23,
+  "fields": {
+    "name": "Can delete user",
+    "content_type": 6,
+    "codename": "delete_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 24,
+  "fields": {
+    "name": "Can view user",
+    "content_type": 6,
+    "codename": "view_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 25,
+  "fields": {
+    "name": "Can add parking space",
+    "content_type": 7,
+    "codename": "add_parkingspace"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 26,
+  "fields": {
+    "name": "Can change parking space",
+    "content_type": 7,
+    "codename": "change_parkingspace"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 27,
+  "fields": {
+    "name": "Can delete parking space",
+    "content_type": 7,
+    "codename": "delete_parkingspace"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 28,
+  "fields": {
+    "name": "Can view parking space",
+    "content_type": 7,
+    "codename": "view_parkingspace"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 29,
+  "fields": {
+    "name": "Can add parking slot",
+    "content_type": 8,
+    "codename": "add_parkingslot"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 30,
+  "fields": {
+    "name": "Can change parking slot",
+    "content_type": 8,
+    "codename": "change_parkingslot"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 31,
+  "fields": {
+    "name": "Can delete parking slot",
+    "content_type": 8,
+    "codename": "delete_parkingslot"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 32,
+  "fields": {
+    "name": "Can view parking slot",
+    "content_type": 8,
+    "codename": "view_parkingslot"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 33,
+  "fields": {
+    "name": "Can add gate",
+    "content_type": 9,
+    "codename": "add_gate"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 34,
+  "fields": {
+    "name": "Can change gate",
+    "content_type": 9,
+    "codename": "change_gate"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 35,
+  "fields": {
+    "name": "Can delete gate",
+    "content_type": 9,
+    "codename": "delete_gate"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 36,
+  "fields": {
+    "name": "Can view gate",
+    "content_type": 9,
+    "codename": "view_gate"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 37,
+  "fields": {
+    "name": "Can add cctv feed",
+    "content_type": 10,
+    "codename": "add_cctvfeed"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 38,
+  "fields": {
+    "name": "Can change cctv feed",
+    "content_type": 10,
+    "codename": "change_cctvfeed"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 39,
+  "fields": {
+    "name": "Can delete cctv feed",
+    "content_type": 10,
+    "codename": "delete_cctvfeed"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 40,
+  "fields": {
+    "name": "Can view cctv feed",
+    "content_type": 10,
+    "codename": "view_cctvfeed"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 41,
+  "fields": {
+    "name": "Can add reservation",
+    "content_type": 11,
+    "codename": "add_reservation"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 42,
+  "fields": {
+    "name": "Can change reservation",
+    "content_type": 11,
+    "codename": "change_reservation"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 43,
+  "fields": {
+    "name": "Can delete reservation",
+    "content_type": 11,
+    "codename": "delete_reservation"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 44,
+  "fields": {
+    "name": "Can view reservation",
+    "content_type": 11,
+    "codename": "view_reservation"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 45,
+  "fields": {
+    "name": "Can add vehicle log",
+    "content_type": 12,
+    "codename": "add_vehiclelog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 46,
+  "fields": {
+    "name": "Can change vehicle log",
+    "content_type": 12,
+    "codename": "change_vehiclelog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 47,
+  "fields": {
+    "name": "Can delete vehicle log",
+    "content_type": 12,
+    "codename": "delete_vehiclelog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 48,
+  "fields": {
+    "name": "Can view vehicle log",
+    "content_type": 12,
+    "codename": "view_vehiclelog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 49,
+  "fields": {
+    "name": "Can add payment record",
+    "content_type": 13,
+    "codename": "add_paymentrecord"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 50,
+  "fields": {
+    "name": "Can change payment record",
+    "content_type": 13,
+    "codename": "change_paymentrecord"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 51,
+  "fields": {
+    "name": "Can delete payment record",
+    "content_type": 13,
+    "codename": "delete_paymentrecord"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 52,
+  "fields": {
+    "name": "Can view payment record",
+    "content_type": 13,
+    "codename": "view_paymentrecord"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 1,
+  "fields": {
+    "app_label": "admin",
+    "model": "logentry"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 2,
+  "fields": {
+    "app_label": "auth",
+    "model": "permission"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 3,
+  "fields": {
+    "app_label": "auth",
+    "model": "group"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 4,
+  "fields": {
+    "app_label": "contenttypes",
+    "model": "contenttype"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 5,
+  "fields": {
+    "app_label": "sessions",
+    "model": "session"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 6,
+  "fields": {
+    "app_label": "api",
+    "model": "user"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 7,
+  "fields": {
+    "app_label": "api",
+    "model": "parkingspace"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 8,
+  "fields": {
+    "app_label": "api",
+    "model": "parkingslot"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 9,
+  "fields": {
+    "app_label": "api",
+    "model": "gate"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 10,
+  "fields": {
+    "app_label": "api",
+    "model": "cctvfeed"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 11,
+  "fields": {
+    "app_label": "api",
+    "model": "reservation"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 12,
+  "fields": {
+    "app_label": "api",
+    "model": "vehiclelog"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 13,
+  "fields": {
+    "app_label": "api",
+    "model": "paymentrecord"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "8kd2f9koo9z0isokqxlfeeva1t0gz6rp",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQRe_C2hAZaMu4dO8ZCAwzUjU0Ke3KeHfbpAvd_vfef6sQ16WEtfEcxqwuqlOn3y1FenLdQX7Eep80TXWZx6R3RR-06duU-XU93L-DElvZasgezj141yGKQ3Y0iAdGjxY4CVoaLCIBiicxYonJIDIasxXUG_X5AsoJN1c:1w8jpv:xsggLR_XFoHI62gW32SDmgbZia0WvRe2zZgWx0ew-44",
+    "expire_date": "2026-04-17T19:05:43.916Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "kzs9494ff4jti0k1ck6r60j5i5tdz138",
+  "fields": {
+    "session_data": ".eJxVjMEOwiAQRP-FsyF06ULx6L3fQBaWStXQpLQn479Lkx70OPPezFt42rfs95pWP7O4ChCX3y5QfKZyAH5QuS8yLmVb5yAPRZ60ynHh9Lqd7t9Bpprb2hKDjYBKDw46i0a1DA4AgZH6zk3RqB7Jap1aNNE6GAIGTZNiSiA-X6gDNtQ:1w0cdm:0RJDCFcAuUiQHEoHeb2seBuSo9sDFHD-EPJl0W0_iO0",
+    "expire_date": "2026-03-26T09:47:38.989Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "r8zgi16bpkmht8uiak4subgobecxpnxo",
+  "fields": {
+    "session_data": ".eJxVjE0OwiAYBe_C2hABKejSvWcg3x9SNZCUdmW8u23ShW7fzLy3SrDMJS1dpjSyuiivDr8bAj2lboAfUO9NU6vzNKLeFL3Trm-N5XXd3b-DAr2sNZBjcojZRYoGBH04s3EhQPSDz8LgbUbxYplkFUCOkYBPaIcQTQb1-QIg8DmA:1vvUPC:LTT262tehvFawtZJnxKC2QuLpml4j5xKysSNXUYZzhI",
+    "expire_date": "2026-03-12T05:59:22.802Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "tw7k3vi8vfbpm1iqn5ujpg2dt8s9dj68",
+  "fields": {
+    "session_data": ".eJxVjMEOwiAQRP-FsyF06ULx6L3fQBaWStXQpLQn479Lkx70OPPezFt42rfs95pWP7O4ChCX3y5QfKZyAH5QuS8yLmVb5yAPRZ60ynHh9Lqd7t9Bpprb2hKDjYBKDw46i0a1DA4AgZH6zk3RqB7Jap1aNNE6GAIGTZNiSiA-X6gDNtQ:1vtIQV:w2qlGBlBTsZaFdegCwBCE7EjRD6yERefw8slpq24Gs8",
+    "expire_date": "2026-03-06T04:47:39.997Z"
+  }
+},
+{
+  "model": "api.user",
+  "pk": 1,
+  "fields": {
+    "password": "!6ARsuaDcXZvaLrXu6QtS5MoujWFWI3e6810TZoIv",
+    "last_login": null,
+    "is_superuser": true,
+    "username": "admin",
+    "first_name": "",
+    "last_name": "",
+    "email": "admin@example.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-02-20T04:39:54.286Z",
+    "user_type": "admin",
+    "phone": "",
+    "assigned_parking_space": null,
+    "address": "",
+    "company_name": "",
+    "land_owner_name": "",
+    "land_tax_receipt": "",
+    "license_document": "",
+    "government_id": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "api.user",
+  "pk": 2,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$8r57VKdh67BxjJy7LlMSr3$fGqmoWMJ/CG2s4mZ/dzo7jC9jwJW/GeM0+iQeyt5ZaQ=",
+    "last_login": "2026-03-12T09:47:38.977Z",
+    "is_superuser": true,
+    "username": "hrid",
+    "first_name": "",
+    "last_name": "",
+    "email": "hrid@gmail.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-02-20T04:47:22.254Z",
+    "user_type": "customer",
+    "phone": "",
+    "assigned_parking_space": null,
+    "address": "",
+    "company_name": "",
+    "land_owner_name": "",
+    "land_tax_receipt": "",
+    "license_document": "",
+    "government_id": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "api.user",
+  "pk": 3,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$fXaq3WdT6ZG9hHFrhkVrzs$5czurrrQo2bVdGWDyFdnpC5V8N7LYPCd7aJe5h0B06c=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "hridul@gmail.com",
+    "first_name": "Hridul",
+    "last_name": "",
+    "email": "hridul@gmail.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-02-22T09:13:32.529Z",
+    "user_type": "customer",
+    "phone": "1234567890",
+    "assigned_parking_space": null,
+    "address": "",
+    "company_name": "",
+    "land_owner_name": "",
+    "land_tax_receipt": "",
+    "license_document": "",
+    "government_id": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "api.user",
+  "pk": 4,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$nMX6P0LzDdiSoQU5wgJjpS$6jpXLtxOfI14ni+VwGrrjp9WU0aDcB40GL/aeP4OVk4=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "testuser",
+    "first_name": "Test",
+    "last_name": "User",
+    "email": "test@example.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-02-22T09:27:10.798Z",
+    "user_type": "customer",
+    "phone": "",
+    "assigned_parking_space": null,
+    "address": "",
+    "company_name": "",
+    "land_owner_name": "",
+    "land_tax_receipt": "",
+    "license_document": "",
+    "government_id": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "api.user",
+  "pk": 5,
+  "fields": {
+    "password": "pbkdf2_sha256$600000$JTsbzvfgjE3i2PoDmukwW5$StvgJPjqP9f1lUTW0i9IzvfDh8muw3bnaKDj4RO8wgg=",
+    "last_login": "2026-04-03T19:05:43.905Z",
+    "is_superuser": true,
+    "username": "hridul",
+    "first_name": "",
+    "last_name": "",
+    "email": "hridul@gmaul.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-02-26T05:59:02.103Z",
+    "user_type": "customer",
+    "phone": "",
+    "assigned_parking_space": null,
+    "address": "",
+    "company_name": "",
+    "land_owner_name": "",
+    "land_tax_receipt": "",
+    "license_document": "",
+    "government_id": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "api.user",
+  "pk": 6,
+  "fields": {
+    "password": "pbkdf2_sha256$600000$306DNiVCYkijXGceDjLjVE$bHwOkw4chMv7o+ZDjTIT11+slUSh+UxqkrI3LANmA68=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "raj@gmail.com",
+    "first_name": "raj",
+    "last_name": "",
+    "email": "raj@gmail.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-02-28T07:38:20.526Z",
+    "user_type": "customer",
+    "phone": "8451651684",
+    "assigned_parking_space": null,
+    "address": "",
+    "company_name": "",
+    "land_owner_name": "",
+    "land_tax_receipt": "",
+    "license_document": "",
+    "government_id": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "api.user",
+  "pk": 7,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$ZLmiTaOCjY2CYFXquiqmXc$JEVXnhscDjSp8ZM8t7Gg/SJ2EkPygGSyhyhRNAyVssg=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "jack@gmail.com",
+    "first_name": "jack",
+    "last_name": "",
+    "email": "jack@gmail.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-03-08T10:08:01.460Z",
+    "user_type": "customer",
+    "phone": "988451625",
+    "assigned_parking_space": null,
+    "address": "",
+    "company_name": "",
+    "land_owner_name": "",
+    "land_tax_receipt": "",
+    "license_document": "",
+    "government_id": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "api.user",
+  "pk": 8,
+  "fields": {
+    "password": "pbkdf2_sha256$600000$7LjjZGDPh64VvXxXnQSzKV$ItOFpLZFqpY9REKnwB2G12la1g33xens+6BEy5qSXmg=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "john@gmail.com",
+    "first_name": "john",
+    "last_name": "",
+    "email": "john@gmail.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-03-08T10:09:44.337Z",
+    "user_type": "vendor",
+    "phone": "98754615",
+    "assigned_parking_space": null,
+    "address": "",
+    "company_name": "",
+    "land_owner_name": "",
+    "land_tax_receipt": "",
+    "license_document": "",
+    "government_id": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "api.user",
+  "pk": 9,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$07wXKWoKUlEztq11pYLpjP$8/KUUdFIrjyvh/pggFkkurIh3bXr0aMoyRMOs5L03w0=",
+    "last_login": null,
+    "is_superuser": true,
+    "username": "admin_test",
+    "first_name": "",
+    "last_name": "",
+    "email": "admin@example.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-03-09T07:00:27.339Z",
+    "user_type": "admin",
+    "phone": "",
+    "assigned_parking_space": null,
+    "address": "",
+    "company_name": "",
+    "land_owner_name": "",
+    "land_tax_receipt": "",
+    "license_document": "",
+    "government_id": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "api.user",
+  "pk": 10,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$VaQqo0wTzGBMyw3GP7A3KY$1qbNrZBmx09rEQrKKVrpIHmIPUTC6YbiqdI0UduuOfk=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "customer_test",
+    "first_name": "Test",
+    "last_name": "Customer",
+    "email": "customer@example.com",
+    "is_staff": false,
+    "is_active": false,
+    "date_joined": "2026-03-09T07:03:14Z",
+    "user_type": "customer",
+    "phone": "",
+    "assigned_parking_space": null,
+    "address": "",
+    "company_name": "",
+    "land_owner_name": "",
+    "land_tax_receipt": "",
+    "license_document": "",
+    "government_id": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "api.user",
+  "pk": 11,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$i2DxgFiOHdeCGyO1DpDfhF$IAfwnDqo9cMDrxALa2bXVzKrYjro+htUBxC8+IBR/FE=",
+    "last_login": null,
+    "is_superuser": true,
+    "username": "admin1",
+    "first_name": "",
+    "last_name": "",
+    "email": "admin1@gmail.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-03-09T09:11:49.370Z",
+    "user_type": "customer",
+    "phone": "",
+    "assigned_parking_space": null,
+    "address": "",
+    "company_name": "",
+    "land_owner_name": "",
+    "land_tax_receipt": "",
+    "license_document": "",
+    "government_id": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "api.user",
+  "pk": 12,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$gFcyg231ARB0d9MhJn7ClH$wCvdqLCyD0dvwSqxNVVAJTJ4dvrgbjeFHzRcIL3eLis=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "raj1@gmail.com",
+    "first_name": "raj1",
+    "last_name": "",
+    "email": "raj1@gmail.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-03-09T11:53:13.305Z",
+    "user_type": "customer",
+    "phone": "84151592159",
+    "assigned_parking_space": null,
+    "address": "",
+    "company_name": "",
+    "land_owner_name": "",
+    "land_tax_receipt": "",
+    "license_document": "",
+    "government_id": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "api.user",
+  "pk": 13,
+  "fields": {
+    "password": "pbkdf2_sha256$600000$QMl76ngUBkoLvJZC0XPo3z$0rhBrBEPIhlYqrOKup1dglmDU9jjM9tTx/+8q+5ZszA=",
+    "last_login": null,
+    "is_superuser": true,
+    "username": "security@gmail.com",
+    "first_name": "SEC",
+    "last_name": "",
+    "email": "security@gmail.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-03-24T14:43:08Z",
+    "user_type": "security",
+    "phone": "85892692",
+    "assigned_parking_space": null,
+    "address": "",
+    "company_name": "",
+    "land_owner_name": "",
+    "land_tax_receipt": "",
+    "license_document": "",
+    "government_id": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "api.user",
+  "pk": 14,
+  "fields": {
+    "password": "pbkdf2_sha256$600000$cxIrR51UOM5fwjmMfohPjj$FZOdaYPx2aKpoj2jkGj/oSEpX3oQ1vVuPuYy9U6sVsA=",
+    "last_login": null,
+    "is_superuser": true,
+    "username": "admin5",
+    "first_name": "",
+    "last_name": "",
+    "email": "admin5@gmail.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-04-05T14:13:22.101Z",
+    "user_type": "admin",
+    "phone": "",
+    "assigned_parking_space": null,
+    "address": "",
+    "company_name": "",
+    "land_owner_name": "",
+    "land_tax_receipt": "",
+    "license_document": "",
+    "government_id": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "api.user",
+  "pk": 15,
+  "fields": {
+    "password": "pbkdf2_sha256$600000$hOoblZLYsTohGnY7zLZaot$0G3QQ+QX0XUTqScAISDMnzqFJBYAyhUmeYpkcnlbsK0=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "balraj@gmail.com",
+    "first_name": "Balraj",
+    "last_name": "",
+    "email": "balraj@gmail.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-04-05T15:31:15.504Z",
+    "user_type": "security",
+    "phone": "848546",
+    "assigned_parking_space": 19,
+    "address": "",
+    "company_name": "",
+    "land_owner_name": "",
+    "land_tax_receipt": "",
+    "license_document": "",
+    "government_id": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "api.user",
+  "pk": 16,
+  "fields": {
+    "password": "pbkdf2_sha256$600000$BvKGELlaBO8k8uObQaPAcQ$SxQaNdOz8GyTqPbHAt3z3zxRob2MbiYtqNb9nT5RRKo=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "security1@gmail.com",
+    "first_name": "security1",
+    "last_name": "",
+    "email": "security1@gmail.com",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-04-12T09:26:51.596Z",
+    "user_type": "security",
+    "phone": "545251648",
+    "assigned_parking_space": 2,
+    "address": "",
+    "company_name": "",
+    "land_owner_name": "",
+    "land_tax_receipt": "",
+    "license_document": "",
+    "government_id": "",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "api.parkingspace",
+  "pk": 1,
+  "fields": {
+    "name": "Test Parking Space",
+    "vendor": 4,
+    "address": "123 Test Street",
+    "total_slots": 10,
+    "location": "",
+    "open_time": null,
+    "close_time": null,
+    "google_map_link": "",
+    "parking_image": "",
+    "cctv_video": "",
+    "is_active": true,
+    "hourly_rate": "30.00",
+    "booking_fee": "20.00",
+    "created_at": "2026-02-22T09:27:10.814Z"
+  }
+},
+{
+  "model": "api.parkingspace",
+  "pk": 2,
+  "fields": {
+    "name": "NewParking",
+    "vendor": 8,
+    "address": "kakkanad",
+    "total_slots": 75,
+    "location": "kakkanad",
+    "open_time": "08:00:00",
+    "close_time": "22:00:00",
+    "google_map_link": "",
+    "parking_image": "",
+    "cctv_video": "",
+    "is_active": true,
+    "hourly_rate": "30.00",
+    "booking_fee": "20.00",
+    "created_at": "2026-03-09T09:00:10.421Z"
+  }
+},
+{
+  "model": "api.parkingspace",
+  "pk": 3,
+  "fields": {
+    "name": "PARKING",
+    "vendor": 11,
+    "address": "Edapally",
+    "total_slots": 50,
+    "location": "Edapally",
+    "open_time": "08:00:00",
+    "close_time": "22:00:00",
+    "google_map_link": "",
+    "parking_image": "",
+    "cctv_video": "",
+    "is_active": true,
+    "hourly_rate": "30.00",
+    "booking_fee": "20.00",
+    "created_at": "2026-03-09T10:56:56.114Z"
+  }
+},
+{
+  "model": "api.parkingspace",
+  "pk": 5,
+  "fields": {
+    "name": "Demo Parking Space",
+    "vendor": 8,
+    "address": "Demo City Center",
+    "total_slots": 5,
+    "location": "Demo City Center",
+    "open_time": "08:00:00",
+    "close_time": "22:00:00",
+    "google_map_link": "",
+    "parking_image": "",
+    "cctv_video": "",
+    "is_active": true,
+    "hourly_rate": "30.00",
+    "booking_fee": "20.00",
+    "created_at": "2026-04-03T19:26:21.199Z"
+  }
+},
+{
+  "model": "api.parkingspace",
+  "pk": 6,
+  "fields": {
+    "name": "Demo Parking Space",
+    "vendor": 8,
+    "address": "Demo City Center",
+    "total_slots": 5,
+    "location": "Demo City Center",
+    "open_time": "08:00:00",
+    "close_time": "22:00:00",
+    "google_map_link": "",
+    "parking_image": "",
+    "cctv_video": "",
+    "is_active": true,
+    "hourly_rate": "30.00",
+    "booking_fee": "20.00",
+    "created_at": "2026-04-03T19:37:10.783Z"
+  }
+},
+{
+  "model": "api.parkingspace",
+  "pk": 7,
+  "fields": {
+    "name": "Demo Parking Space",
+    "vendor": 8,
+    "address": "Demo City Center",
+    "total_slots": 5,
+    "location": "Demo City Center",
+    "open_time": "08:00:00",
+    "close_time": "22:00:00",
+    "google_map_link": "",
+    "parking_image": "",
+    "cctv_video": "",
+    "is_active": true,
+    "hourly_rate": "30.00",
+    "booking_fee": "20.00",
+    "created_at": "2026-04-03T19:40:08.005Z"
+  }
+},
+{
+  "model": "api.parkingspace",
+  "pk": 8,
+  "fields": {
+    "name": "Demo Parking Space",
+    "vendor": 8,
+    "address": "Demo City Center",
+    "total_slots": 5,
+    "location": "Demo City Center",
+    "open_time": "08:00:00",
+    "close_time": "22:00:00",
+    "google_map_link": "",
+    "parking_image": "",
+    "cctv_video": "",
+    "is_active": true,
+    "hourly_rate": "30.00",
+    "booking_fee": "20.00",
+    "created_at": "2026-04-03T19:44:25.927Z"
+  }
+},
+{
+  "model": "api.parkingspace",
+  "pk": 9,
+  "fields": {
+    "name": "Demo Parking Space",
+    "vendor": 8,
+    "address": "Demo City Center",
+    "total_slots": 5,
+    "location": "Demo City Center",
+    "open_time": "08:00:00",
+    "close_time": "22:00:00",
+    "google_map_link": "",
+    "parking_image": "",
+    "cctv_video": "",
+    "is_active": true,
+    "hourly_rate": "30.00",
+    "booking_fee": "20.00",
+    "created_at": "2026-04-04T18:52:04.135Z"
+  }
+},
+{
+  "model": "api.parkingspace",
+  "pk": 10,
+  "fields": {
+    "name": "Demo Parking Space",
+    "vendor": 8,
+    "address": "Demo City Center",
+    "total_slots": 5,
+    "location": "Demo City Center",
+    "open_time": "08:00:00",
+    "close_time": "22:00:00",
+    "google_map_link": "",
+    "parking_image": "",
+    "cctv_video": "",
+    "is_active": true,
+    "hourly_rate": "30.00",
+    "booking_fee": "20.00",
+    "created_at": "2026-04-04T18:57:18.097Z"
+  }
+},
+{
+  "model": "api.parkingspace",
+  "pk": 11,
+  "fields": {
+    "name": "Demo Parking Space",
+    "vendor": 8,
+    "address": "Demo City Center",
+    "total_slots": 5,
+    "location": "Demo City Center",
+    "open_time": "08:00:00",
+    "close_time": "22:00:00",
+    "google_map_link": "",
+    "parking_image": "",
+    "cctv_video": "",
+    "is_active": true,
+    "hourly_rate": "30.00",
+    "booking_fee": "20.00",
+    "created_at": "2026-04-04T19:22:05.427Z"
+  }
+},
+{
+  "model": "api.parkingspace",
+  "pk": 12,
+  "fields": {
+    "name": "Demo Parking Space",
+    "vendor": 8,
+    "address": "Demo City Center",
+    "total_slots": 5,
+    "location": "Demo City Center",
+    "open_time": "08:00:00",
+    "close_time": "22:00:00",
+    "google_map_link": "",
+    "parking_image": "",
+    "cctv_video": "",
+    "is_active": true,
+    "hourly_rate": "30.00",
+    "booking_fee": "20.00",
+    "created_at": "2026-04-04T19:33:43.838Z"
+  }
+},
+{
+  "model": "api.parkingspace",
+  "pk": 13,
+  "fields": {
+    "name": "Demo Parking Space",
+    "vendor": 8,
+    "address": "Demo City Center",
+    "total_slots": 5,
+    "location": "Demo City Center",
+    "open_time": "08:00:00",
+    "close_time": "22:00:00",
+    "google_map_link": "",
+    "parking_image": "",
+    "cctv_video": "",
+    "is_active": true,
+    "hourly_rate": "30.00",
+    "booking_fee": "20.00",
+    "created_at": "2026-04-05T08:58:38.470Z"
+  }
+},
+{
+  "model": "api.parkingspace",
+  "pk": 14,
+  "fields": {
+    "name": "Demo Parking Space",
+    "vendor": 8,
+    "address": "Demo City Center",
+    "total_slots": 5,
+    "location": "Demo City Center",
+    "open_time": "08:00:00",
+    "close_time": "22:00:00",
+    "google_map_link": "",
+    "parking_image": "",
+    "cctv_video": "",
+    "is_active": true,
+    "hourly_rate": "30.00",
+    "booking_fee": "20.00",
+    "created_at": "2026-04-05T09:16:51.766Z"
+  }
+},
+{
+  "model": "api.parkingspace",
+  "pk": 15,
+  "fields": {
+    "name": "Demo Parking Space",
+    "vendor": 8,
+    "address": "Demo City Center",
+    "total_slots": 5,
+    "location": "Demo City Center",
+    "open_time": "08:00:00",
+    "close_time": "22:00:00",
+    "google_map_link": "",
+    "parking_image": "",
+    "cctv_video": "",
+    "is_active": true,
+    "hourly_rate": "30.00",
+    "booking_fee": "20.00",
+    "created_at": "2026-04-05T10:13:27.672Z"
+  }
+},
+{
+  "model": "api.parkingspace",
+  "pk": 16,
+  "fields": {
+    "name": "Demo Parking Space",
+    "vendor": 8,
+    "address": "Demo City Center",
+    "total_slots": 5,
+    "location": "Demo City Center",
+    "open_time": "08:00:00",
+    "close_time": "22:00:00",
+    "google_map_link": "",
+    "parking_image": "",
+    "cctv_video": "",
+    "is_active": true,
+    "hourly_rate": "30.00",
+    "booking_fee": "20.00",
+    "created_at": "2026-04-05T11:43:16.563Z"
+  }
+},
+{
+  "model": "api.parkingspace",
+  "pk": 17,
+  "fields": {
+    "name": "Demo Parking Space",
+    "vendor": 8,
+    "address": "Demo City Center",
+    "total_slots": 5,
+    "location": "Demo City Center",
+    "open_time": "08:00:00",
+    "close_time": "22:00:00",
+    "google_map_link": "",
+    "parking_image": "",
+    "cctv_video": "",
+    "is_active": true,
+    "hourly_rate": "30.00",
+    "booking_fee": "20.00",
+    "created_at": "2026-04-05T12:37:07.739Z"
+  }
+},
+{
+  "model": "api.parkingspace",
+  "pk": 18,
+  "fields": {
+    "name": "Demo Parking Space",
+    "vendor": 8,
+    "address": "Demo City Center",
+    "total_slots": 5,
+    "location": "Demo City Center",
+    "open_time": "08:00:00",
+    "close_time": "22:00:00",
+    "google_map_link": "",
+    "parking_image": "",
+    "cctv_video": "",
+    "is_active": true,
+    "hourly_rate": "30.00",
+    "booking_fee": "20.00",
+    "created_at": "2026-04-05T12:51:58.581Z"
+  }
+},
+{
+  "model": "api.parkingspace",
+  "pk": 19,
+  "fields": {
+    "name": "kakkanad parking",
+    "vendor": 8,
+    "address": "https://maps.app.goo.gl/tw7xAgpN8mRdFJBQ9",
+    "total_slots": 12,
+    "location": "https://maps.app.goo.gl/tw7xAgpN8mRdFJBQ9",
+    "open_time": "08:00:00",
+    "close_time": "22:00:00",
+    "google_map_link": "https://maps.app.goo.gl/tw7xAgpN8mRdFJBQ9",
+    "parking_image": "",
+    "cctv_video": "",
+    "is_active": true,
+    "hourly_rate": "30.00",
+    "booking_fee": "20.00",
+    "created_at": "2026-04-05T15:04:21.003Z"
+  }
+},
+{
+  "model": "api.parkingspace",
+  "pk": 20,
+  "fields": {
+    "name": "Demo Parking Space",
+    "vendor": 8,
+    "address": "Demo City Center",
+    "total_slots": 5,
+    "location": "Demo City Center",
+    "open_time": "08:00:00",
+    "close_time": "22:00:00",
+    "google_map_link": "",
+    "parking_image": "",
+    "cctv_video": "",
+    "is_active": true,
+    "hourly_rate": "30.00",
+    "booking_fee": "20.00",
+    "created_at": "2026-04-06T04:52:19.254Z"
+  }
+},
+{
+  "model": "api.parkingspace",
+  "pk": 21,
+  "fields": {
+    "name": "Demo Parking Space",
+    "vendor": 8,
+    "address": "Demo City Center",
+    "total_slots": 5,
+    "location": "Demo City Center",
+    "open_time": "08:00:00",
+    "close_time": "22:00:00",
+    "google_map_link": "",
+    "parking_image": "",
+    "cctv_video": "",
+    "is_active": true,
+    "hourly_rate": "30.00",
+    "booking_fee": "20.00",
+    "created_at": "2026-04-06T16:05:50.456Z"
+  }
+},
+{
+  "model": "api.parkingspace",
+  "pk": 22,
+  "fields": {
+    "name": "Demo Parking Space",
+    "vendor": 8,
+    "address": "Demo City Center",
+    "total_slots": 5,
+    "location": "Demo City Center",
+    "open_time": "08:00:00",
+    "close_time": "22:00:00",
+    "google_map_link": "",
+    "parking_image": "",
+    "cctv_video": "",
+    "is_active": true,
+    "hourly_rate": "30.00",
+    "booking_fee": "20.00",
+    "created_at": "2026-04-07T04:19:10.723Z"
+  }
+},
+{
+  "model": "api.parkingspace",
+  "pk": 23,
+  "fields": {
+    "name": "Demo Parking Space",
+    "vendor": 8,
+    "address": "Demo City Center",
+    "total_slots": 5,
+    "location": "Demo City Center",
+    "open_time": "08:00:00",
+    "close_time": "22:00:00",
+    "google_map_link": "",
+    "parking_image": "",
+    "cctv_video": "",
+    "is_active": true,
+    "hourly_rate": "30.00",
+    "booking_fee": "20.00",
+    "created_at": "2026-04-07T04:41:46.704Z"
+  }
+},
+{
+  "model": "api.parkingspace",
+  "pk": 24,
+  "fields": {
+    "name": "Demo Parking Space",
+    "vendor": 8,
+    "address": "Demo City Center",
+    "total_slots": 5,
+    "location": "Demo City Center",
+    "open_time": "08:00:00",
+    "close_time": "22:00:00",
+    "google_map_link": "",
+    "parking_image": "",
+    "cctv_video": "",
+    "is_active": true,
+    "hourly_rate": "30.00",
+    "booking_fee": "20.00",
+    "created_at": "2026-04-07T04:58:00.386Z"
+  }
+},
+{
+  "model": "api.parkingspace",
+  "pk": 25,
+  "fields": {
+    "name": "Demo Parking Space",
+    "vendor": 8,
+    "address": "Demo City Center",
+    "total_slots": 5,
+    "location": "Demo City Center",
+    "open_time": "08:00:00",
+    "close_time": "22:00:00",
+    "google_map_link": "",
+    "parking_image": "",
+    "cctv_video": "",
+    "is_active": true,
+    "hourly_rate": "30.00",
+    "booking_fee": "20.00",
+    "created_at": "2026-04-07T05:52:01.386Z"
+  }
+},
+{
+  "model": "api.parkingspace",
+  "pk": 26,
+  "fields": {
+    "name": "Demo Parking Space",
+    "vendor": 8,
+    "address": "Demo City Center",
+    "total_slots": 5,
+    "location": "Demo City Center",
+    "open_time": "08:00:00",
+    "close_time": "22:00:00",
+    "google_map_link": "",
+    "parking_image": "",
+    "cctv_video": "",
+    "is_active": true,
+    "hourly_rate": "30.00",
+    "booking_fee": "20.00",
+    "created_at": "2026-04-12T11:05:38.052Z"
+  }
+},
+{
+  "model": "api.parkingspace",
+  "pk": 27,
+  "fields": {
+    "name": "Demo Parking Space",
+    "vendor": 8,
+    "address": "Demo City Center",
+    "total_slots": 5,
+    "location": "Demo City Center",
+    "open_time": "08:00:00",
+    "close_time": "22:00:00",
+    "google_map_link": "",
+    "parking_image": "",
+    "cctv_video": "",
+    "is_active": true,
+    "hourly_rate": "30.00",
+    "booking_fee": "20.00",
+    "created_at": "2026-04-12T11:13:20.927Z"
+  }
+},
+{
+  "model": "api.parkingspace",
+  "pk": 28,
+  "fields": {
+    "name": "Demo Parking Space",
+    "vendor": 8,
+    "address": "Demo City Center",
+    "total_slots": 5,
+    "location": "Demo City Center",
+    "open_time": "08:00:00",
+    "close_time": "22:00:00",
+    "google_map_link": "",
+    "parking_image": "",
+    "cctv_video": "",
+    "is_active": true,
+    "hourly_rate": "30.00",
+    "booking_fee": "20.00",
+    "created_at": "2026-04-12T11:20:14.639Z"
+  }
+},
+{
+  "model": "api.parkingspace",
+  "pk": 29,
+  "fields": {
+    "name": "Demo Parking Space",
+    "vendor": 8,
+    "address": "Demo City Center",
+    "total_slots": 5,
+    "location": "Demo City Center",
+    "open_time": "08:00:00",
+    "close_time": "22:00:00",
+    "google_map_link": "",
+    "parking_image": "",
+    "cctv_video": "",
+    "is_active": true,
+    "hourly_rate": "30.00",
+    "booking_fee": "20.00",
+    "created_at": "2026-04-12T11:25:39.466Z"
+  }
+},
+{
+  "model": "api.parkingspace",
+  "pk": 30,
+  "fields": {
+    "name": "Demo Parking Space",
+    "vendor": 8,
+    "address": "Demo City Center",
+    "total_slots": 5,
+    "location": "Demo City Center",
+    "open_time": "08:00:00",
+    "close_time": "22:00:00",
+    "google_map_link": "",
+    "parking_image": "",
+    "cctv_video": "",
+    "is_active": true,
+    "hourly_rate": "30.00",
+    "booking_fee": "20.00",
+    "created_at": "2026-04-12T11:48:39.262Z"
+  }
+},
+{
+  "model": "api.parkingspace",
+  "pk": 31,
+  "fields": {
+    "name": "Demo Parking Space",
+    "vendor": 8,
+    "address": "Demo City Center",
+    "total_slots": 5,
+    "location": "Demo City Center",
+    "open_time": "08:00:00",
+    "close_time": "22:00:00",
+    "google_map_link": "",
+    "parking_image": "",
+    "cctv_video": "",
+    "is_active": true,
+    "hourly_rate": "30.00",
+    "booking_fee": "20.00",
+    "created_at": "2026-04-12T12:01:47.407Z"
+  }
+},
+{
+  "model": "api.parkingspace",
+  "pk": 32,
+  "fields": {
+    "name": "Demo Parking Space",
+    "vendor": 8,
+    "address": "Demo City Center",
+    "total_slots": 5,
+    "location": "Demo City Center",
+    "open_time": "08:00:00",
+    "close_time": "22:00:00",
+    "google_map_link": "",
+    "parking_image": "",
+    "cctv_video": "",
+    "is_active": true,
+    "hourly_rate": "30.00",
+    "booking_fee": "20.00",
+    "created_at": "2026-04-12T12:30:07.651Z"
+  }
+},
+{
+  "model": "api.parkingspace",
+  "pk": 33,
+  "fields": {
+    "name": "Demo Parking Space",
+    "vendor": 8,
+    "address": "Demo City Center",
+    "total_slots": 5,
+    "location": "Demo City Center",
+    "open_time": "08:00:00",
+    "close_time": "22:00:00",
+    "google_map_link": "",
+    "parking_image": "",
+    "cctv_video": "",
+    "is_active": true,
+    "hourly_rate": "30.00",
+    "booking_fee": "20.00",
+    "created_at": "2026-04-12T12:41:30.488Z"
+  }
+},
+{
+  "model": "api.parkingspace",
+  "pk": 34,
+  "fields": {
+    "name": "Demo Parking Space",
+    "vendor": 8,
+    "address": "Demo City Center",
+    "total_slots": 5,
+    "location": "Demo City Center",
+    "open_time": "08:00:00",
+    "close_time": "22:00:00",
+    "google_map_link": "",
+    "parking_image": "",
+    "cctv_video": "",
+    "is_active": true,
+    "hourly_rate": "30.00",
+    "booking_fee": "20.00",
+    "created_at": "2026-04-12T12:51:18.757Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 1,
+  "fields": {
+    "space": 1,
+    "slot_id": "S01",
+    "label": "Slot 1",
+    "is_occupied": true,
+    "is_active": true,
+    "created_at": "2026-02-22T09:27:10.827Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 2,
+  "fields": {
+    "space": 1,
+    "slot_id": "S02",
+    "label": "Slot 2",
+    "is_occupied": true,
+    "is_active": true,
+    "created_at": "2026-02-22T09:27:10.839Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 3,
+  "fields": {
+    "space": 1,
+    "slot_id": "S03",
+    "label": "Slot 3",
+    "is_occupied": true,
+    "is_active": true,
+    "created_at": "2026-02-22T09:27:10.852Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 4,
+  "fields": {
+    "space": 1,
+    "slot_id": "S04",
+    "label": "Slot 4",
+    "is_occupied": true,
+    "is_active": true,
+    "created_at": "2026-02-22T09:27:10.864Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 5,
+  "fields": {
+    "space": 1,
+    "slot_id": "S05",
+    "label": "Slot 5",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-02-22T09:27:10.878Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 6,
+  "fields": {
+    "space": 1,
+    "slot_id": "S06",
+    "label": "Slot 6",
+    "is_occupied": true,
+    "is_active": true,
+    "created_at": "2026-02-22T09:27:10.891Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 7,
+  "fields": {
+    "space": 1,
+    "slot_id": "S07",
+    "label": "Slot 7",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-02-22T09:27:10.905Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 8,
+  "fields": {
+    "space": 1,
+    "slot_id": "S08",
+    "label": "Slot 8",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-02-22T09:27:10.918Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 9,
+  "fields": {
+    "space": 1,
+    "slot_id": "S09",
+    "label": "Slot 9",
+    "is_occupied": true,
+    "is_active": true,
+    "created_at": "2026-02-22T09:27:10.930Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 10,
+  "fields": {
+    "space": 1,
+    "slot_id": "S10",
+    "label": "Slot 10",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-02-22T09:27:10.944Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 11,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-001",
+    "label": "Slot 1",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.424Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 12,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-002",
+    "label": "Slot 2",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.425Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 13,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-003",
+    "label": "Slot 3",
+    "is_occupied": true,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.426Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 14,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-004",
+    "label": "Slot 4",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.426Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 15,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-005",
+    "label": "Slot 5",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.426Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 16,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-006",
+    "label": "Slot 6",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.427Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 17,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-007",
+    "label": "Slot 7",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.427Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 18,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-008",
+    "label": "Slot 8",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.427Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 19,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-009",
+    "label": "Slot 9",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.428Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 20,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-010",
+    "label": "Slot 10",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.428Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 21,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-011",
+    "label": "Slot 11",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.428Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 22,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-012",
+    "label": "Slot 12",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.429Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 23,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-013",
+    "label": "Slot 13",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.429Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 24,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-014",
+    "label": "Slot 14",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.429Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 25,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-015",
+    "label": "Slot 15",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.430Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 26,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-016",
+    "label": "Slot 16",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.431Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 27,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-017",
+    "label": "Slot 17",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.432Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 28,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-018",
+    "label": "Slot 18",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.432Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 29,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-019",
+    "label": "Slot 19",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.433Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 30,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-020",
+    "label": "Slot 20",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.433Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 31,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-021",
+    "label": "Slot 21",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.434Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 32,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-022",
+    "label": "Slot 22",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.434Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 33,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-023",
+    "label": "Slot 23",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.435Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 34,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-024",
+    "label": "Slot 24",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.435Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 35,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-025",
+    "label": "Slot 25",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.436Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 36,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-026",
+    "label": "Slot 26",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.436Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 37,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-027",
+    "label": "Slot 27",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.436Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 38,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-028",
+    "label": "Slot 28",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.437Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 39,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-029",
+    "label": "Slot 29",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.438Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 40,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-030",
+    "label": "Slot 30",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.438Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 41,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-031",
+    "label": "Slot 31",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.439Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 42,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-032",
+    "label": "Slot 32",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.439Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 43,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-033",
+    "label": "Slot 33",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.440Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 44,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-034",
+    "label": "Slot 34",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.440Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 45,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-035",
+    "label": "Slot 35",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.440Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 46,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-036",
+    "label": "Slot 36",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.441Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 47,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-037",
+    "label": "Slot 37",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.441Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 48,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-038",
+    "label": "Slot 38",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.441Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 49,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-039",
+    "label": "Slot 39",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.442Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 50,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-040",
+    "label": "Slot 40",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.442Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 51,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-041",
+    "label": "Slot 41",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.443Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 52,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-042",
+    "label": "Slot 42",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.443Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 53,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-043",
+    "label": "Slot 43",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.444Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 54,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-044",
+    "label": "Slot 44",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.444Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 55,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-045",
+    "label": "Slot 45",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.445Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 56,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-046",
+    "label": "Slot 46",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.445Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 57,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-047",
+    "label": "Slot 47",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.446Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 58,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-048",
+    "label": "Slot 48",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.446Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 59,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-049",
+    "label": "Slot 49",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.447Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 60,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-050",
+    "label": "Slot 50",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.448Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 61,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-051",
+    "label": "Slot 51",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.449Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 62,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-052",
+    "label": "Slot 52",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.449Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 63,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-053",
+    "label": "Slot 53",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.450Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 64,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-054",
+    "label": "Slot 54",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.451Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 65,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-055",
+    "label": "Slot 55",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.451Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 66,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-056",
+    "label": "Slot 56",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.452Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 67,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-057",
+    "label": "Slot 57",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.452Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 68,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-058",
+    "label": "Slot 58",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.453Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 69,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-059",
+    "label": "Slot 59",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.454Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 70,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-060",
+    "label": "Slot 60",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.455Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 71,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-061",
+    "label": "Slot 61",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.456Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 72,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-062",
+    "label": "Slot 62",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.457Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 73,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-063",
+    "label": "Slot 63",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.458Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 74,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-064",
+    "label": "Slot 64",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.458Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 75,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-065",
+    "label": "Slot 65",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.459Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 76,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-066",
+    "label": "Slot 66",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.459Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 77,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-067",
+    "label": "Slot 67",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.460Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 78,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-068",
+    "label": "Slot 68",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.460Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 79,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-069",
+    "label": "Slot 69",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.461Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 80,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-070",
+    "label": "Slot 70",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.462Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 81,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-071",
+    "label": "Slot 71",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.462Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 82,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-072",
+    "label": "Slot 72",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.462Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 83,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-073",
+    "label": "Slot 73",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.463Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 84,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-074",
+    "label": "Slot 74",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.463Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 85,
+  "fields": {
+    "space": 2,
+    "slot_id": "S002-075",
+    "label": "Slot 75",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T09:00:10.463Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 86,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-001",
+    "label": "Slot 1",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.123Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 87,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-002",
+    "label": "Slot 2",
+    "is_occupied": true,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.125Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 88,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-003",
+    "label": "Slot 3",
+    "is_occupied": true,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.125Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 89,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-004",
+    "label": "Slot 4",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.126Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 90,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-005",
+    "label": "Slot 5",
+    "is_occupied": true,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.127Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 91,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-006",
+    "label": "Slot 6",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.127Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 92,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-007",
+    "label": "Slot 7",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.128Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 93,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-008",
+    "label": "Slot 8",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.128Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 94,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-009",
+    "label": "Slot 9",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.129Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 95,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-010",
+    "label": "Slot 10",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.129Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 96,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-011",
+    "label": "Slot 11",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.129Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 97,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-012",
+    "label": "Slot 12",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.129Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 98,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-013",
+    "label": "Slot 13",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.130Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 99,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-014",
+    "label": "Slot 14",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.130Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 100,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-015",
+    "label": "Slot 15",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.130Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 101,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-016",
+    "label": "Slot 16",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.130Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 102,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-017",
+    "label": "Slot 17",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.130Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 103,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-018",
+    "label": "Slot 18",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.130Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 104,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-019",
+    "label": "Slot 19",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.131Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 105,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-020",
+    "label": "Slot 20",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.131Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 106,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-021",
+    "label": "Slot 21",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.131Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 107,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-022",
+    "label": "Slot 22",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.131Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 108,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-023",
+    "label": "Slot 23",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.131Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 109,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-024",
+    "label": "Slot 24",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.132Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 110,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-025",
+    "label": "Slot 25",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.133Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 111,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-026",
+    "label": "Slot 26",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.133Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 112,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-027",
+    "label": "Slot 27",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.134Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 113,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-028",
+    "label": "Slot 28",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.134Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 114,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-029",
+    "label": "Slot 29",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.134Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 115,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-030",
+    "label": "Slot 30",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.135Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 116,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-031",
+    "label": "Slot 31",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.135Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 117,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-032",
+    "label": "Slot 32",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.135Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 118,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-033",
+    "label": "Slot 33",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.135Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 119,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-034",
+    "label": "Slot 34",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.136Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 120,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-035",
+    "label": "Slot 35",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.136Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 121,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-036",
+    "label": "Slot 36",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.136Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 122,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-037",
+    "label": "Slot 37",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.137Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 123,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-038",
+    "label": "Slot 38",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.137Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 124,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-039",
+    "label": "Slot 39",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.138Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 125,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-040",
+    "label": "Slot 40",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.138Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 126,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-041",
+    "label": "Slot 41",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.138Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 127,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-042",
+    "label": "Slot 42",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.139Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 128,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-043",
+    "label": "Slot 43",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.139Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 129,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-044",
+    "label": "Slot 44",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.140Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 130,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-045",
+    "label": "Slot 45",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.140Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 131,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-046",
+    "label": "Slot 46",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.140Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 132,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-047",
+    "label": "Slot 47",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.141Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 133,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-048",
+    "label": "Slot 48",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.141Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 134,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-049",
+    "label": "Slot 49",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.142Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 135,
+  "fields": {
+    "space": 3,
+    "slot_id": "S003-050",
+    "label": "Slot 50",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-03-09T10:56:56.142Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 141,
+  "fields": {
+    "space": 5,
+    "slot_id": "S005-001",
+    "label": "Slot 1",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-03T19:26:21.211Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 142,
+  "fields": {
+    "space": 5,
+    "slot_id": "S005-002",
+    "label": "Slot 2",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-03T19:26:21.214Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 143,
+  "fields": {
+    "space": 5,
+    "slot_id": "S005-003",
+    "label": "Slot 3",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-03T19:26:21.217Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 144,
+  "fields": {
+    "space": 5,
+    "slot_id": "S005-004",
+    "label": "Slot 4",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-03T19:26:21.218Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 145,
+  "fields": {
+    "space": 5,
+    "slot_id": "S005-005",
+    "label": "Slot 5",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-03T19:26:21.220Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 146,
+  "fields": {
+    "space": 6,
+    "slot_id": "S006-001",
+    "label": "Slot 1",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-03T19:37:10.792Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 147,
+  "fields": {
+    "space": 6,
+    "slot_id": "S006-002",
+    "label": "Slot 2",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-03T19:37:10.795Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 148,
+  "fields": {
+    "space": 6,
+    "slot_id": "S006-003",
+    "label": "Slot 3",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-03T19:37:10.796Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 149,
+  "fields": {
+    "space": 6,
+    "slot_id": "S006-004",
+    "label": "Slot 4",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-03T19:37:10.797Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 150,
+  "fields": {
+    "space": 6,
+    "slot_id": "S006-005",
+    "label": "Slot 5",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-03T19:37:10.797Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 151,
+  "fields": {
+    "space": 7,
+    "slot_id": "S007-001",
+    "label": "Slot 1",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-03T19:40:08.020Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 152,
+  "fields": {
+    "space": 7,
+    "slot_id": "S007-002",
+    "label": "Slot 2",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-03T19:40:08.021Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 153,
+  "fields": {
+    "space": 7,
+    "slot_id": "S007-003",
+    "label": "Slot 3",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-03T19:40:08.022Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 154,
+  "fields": {
+    "space": 7,
+    "slot_id": "S007-004",
+    "label": "Slot 4",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-03T19:40:08.024Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 155,
+  "fields": {
+    "space": 7,
+    "slot_id": "S007-005",
+    "label": "Slot 5",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-03T19:40:08.025Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 156,
+  "fields": {
+    "space": 8,
+    "slot_id": "S008-001",
+    "label": "Slot 1",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-03T19:44:25.940Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 157,
+  "fields": {
+    "space": 8,
+    "slot_id": "S008-002",
+    "label": "Slot 2",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-03T19:44:25.941Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 158,
+  "fields": {
+    "space": 8,
+    "slot_id": "S008-003",
+    "label": "Slot 3",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-03T19:44:25.942Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 159,
+  "fields": {
+    "space": 8,
+    "slot_id": "S008-004",
+    "label": "Slot 4",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-03T19:44:25.942Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 160,
+  "fields": {
+    "space": 8,
+    "slot_id": "S008-005",
+    "label": "Slot 5",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-03T19:44:25.943Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 161,
+  "fields": {
+    "space": 9,
+    "slot_id": "S009-001",
+    "label": "Slot 1",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-04T18:52:04.148Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 162,
+  "fields": {
+    "space": 9,
+    "slot_id": "S009-002",
+    "label": "Slot 2",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-04T18:52:04.151Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 163,
+  "fields": {
+    "space": 9,
+    "slot_id": "S009-003",
+    "label": "Slot 3",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-04T18:52:04.152Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 164,
+  "fields": {
+    "space": 9,
+    "slot_id": "S009-004",
+    "label": "Slot 4",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-04T18:52:04.152Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 165,
+  "fields": {
+    "space": 9,
+    "slot_id": "S009-005",
+    "label": "Slot 5",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-04T18:52:04.152Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 166,
+  "fields": {
+    "space": 10,
+    "slot_id": "S010-001",
+    "label": "Slot 1",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-04T18:57:18.101Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 167,
+  "fields": {
+    "space": 10,
+    "slot_id": "S010-002",
+    "label": "Slot 2",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-04T18:57:18.102Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 168,
+  "fields": {
+    "space": 10,
+    "slot_id": "S010-003",
+    "label": "Slot 3",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-04T18:57:18.103Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 169,
+  "fields": {
+    "space": 10,
+    "slot_id": "S010-004",
+    "label": "Slot 4",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-04T18:57:18.103Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 170,
+  "fields": {
+    "space": 10,
+    "slot_id": "S010-005",
+    "label": "Slot 5",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-04T18:57:18.103Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 171,
+  "fields": {
+    "space": 11,
+    "slot_id": "S011-001",
+    "label": "Slot 1",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-04T19:22:05.439Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 172,
+  "fields": {
+    "space": 11,
+    "slot_id": "S011-002",
+    "label": "Slot 2",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-04T19:22:05.441Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 173,
+  "fields": {
+    "space": 11,
+    "slot_id": "S011-003",
+    "label": "Slot 3",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-04T19:22:05.442Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 174,
+  "fields": {
+    "space": 11,
+    "slot_id": "S011-004",
+    "label": "Slot 4",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-04T19:22:05.443Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 175,
+  "fields": {
+    "space": 11,
+    "slot_id": "S011-005",
+    "label": "Slot 5",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-04T19:22:05.444Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 176,
+  "fields": {
+    "space": 12,
+    "slot_id": "S012-001",
+    "label": "Slot 1",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-04T19:33:43.842Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 177,
+  "fields": {
+    "space": 12,
+    "slot_id": "S012-002",
+    "label": "Slot 2",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-04T19:33:43.844Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 178,
+  "fields": {
+    "space": 12,
+    "slot_id": "S012-003",
+    "label": "Slot 3",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-04T19:33:43.845Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 179,
+  "fields": {
+    "space": 12,
+    "slot_id": "S012-004",
+    "label": "Slot 4",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-04T19:33:43.845Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 180,
+  "fields": {
+    "space": 12,
+    "slot_id": "S012-005",
+    "label": "Slot 5",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-04T19:33:43.846Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 181,
+  "fields": {
+    "space": 13,
+    "slot_id": "S013-001",
+    "label": "Slot 1",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T08:58:38.480Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 182,
+  "fields": {
+    "space": 13,
+    "slot_id": "S013-002",
+    "label": "Slot 2",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T08:58:38.484Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 183,
+  "fields": {
+    "space": 13,
+    "slot_id": "S013-003",
+    "label": "Slot 3",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T08:58:38.485Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 184,
+  "fields": {
+    "space": 13,
+    "slot_id": "S013-004",
+    "label": "Slot 4",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T08:58:38.485Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 185,
+  "fields": {
+    "space": 13,
+    "slot_id": "S013-005",
+    "label": "Slot 5",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T08:58:38.486Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 186,
+  "fields": {
+    "space": 14,
+    "slot_id": "S014-001",
+    "label": "Slot 1",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T09:16:51.771Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 187,
+  "fields": {
+    "space": 14,
+    "slot_id": "S014-002",
+    "label": "Slot 2",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T09:16:51.772Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 188,
+  "fields": {
+    "space": 14,
+    "slot_id": "S014-003",
+    "label": "Slot 3",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T09:16:51.773Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 189,
+  "fields": {
+    "space": 14,
+    "slot_id": "S014-004",
+    "label": "Slot 4",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T09:16:51.774Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 190,
+  "fields": {
+    "space": 14,
+    "slot_id": "S014-005",
+    "label": "Slot 5",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T09:16:51.775Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 191,
+  "fields": {
+    "space": 15,
+    "slot_id": "S015-001",
+    "label": "Slot 1",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T10:13:27.682Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 192,
+  "fields": {
+    "space": 15,
+    "slot_id": "S015-002",
+    "label": "Slot 2",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T10:13:27.690Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 193,
+  "fields": {
+    "space": 15,
+    "slot_id": "S015-003",
+    "label": "Slot 3",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T10:13:27.692Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 194,
+  "fields": {
+    "space": 15,
+    "slot_id": "S015-004",
+    "label": "Slot 4",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T10:13:27.693Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 195,
+  "fields": {
+    "space": 15,
+    "slot_id": "S015-005",
+    "label": "Slot 5",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T10:13:27.694Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 196,
+  "fields": {
+    "space": 16,
+    "slot_id": "S016-001",
+    "label": "Slot 1",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T11:43:16.575Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 197,
+  "fields": {
+    "space": 16,
+    "slot_id": "S016-002",
+    "label": "Slot 2",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T11:43:16.579Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 198,
+  "fields": {
+    "space": 16,
+    "slot_id": "S016-003",
+    "label": "Slot 3",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T11:43:16.580Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 199,
+  "fields": {
+    "space": 16,
+    "slot_id": "S016-004",
+    "label": "Slot 4",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T11:43:16.580Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 200,
+  "fields": {
+    "space": 16,
+    "slot_id": "S016-005",
+    "label": "Slot 5",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T11:43:16.581Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 201,
+  "fields": {
+    "space": 17,
+    "slot_id": "S017-001",
+    "label": "Slot 1",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T12:37:07.749Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 202,
+  "fields": {
+    "space": 17,
+    "slot_id": "S017-002",
+    "label": "Slot 2",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T12:37:07.753Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 203,
+  "fields": {
+    "space": 17,
+    "slot_id": "S017-003",
+    "label": "Slot 3",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T12:37:07.754Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 204,
+  "fields": {
+    "space": 17,
+    "slot_id": "S017-004",
+    "label": "Slot 4",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T12:37:07.756Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 205,
+  "fields": {
+    "space": 17,
+    "slot_id": "S017-005",
+    "label": "Slot 5",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T12:37:07.757Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 206,
+  "fields": {
+    "space": 18,
+    "slot_id": "S018-001",
+    "label": "Slot 1",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T12:51:58.584Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 207,
+  "fields": {
+    "space": 18,
+    "slot_id": "S018-002",
+    "label": "Slot 2",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T12:51:58.586Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 208,
+  "fields": {
+    "space": 18,
+    "slot_id": "S018-003",
+    "label": "Slot 3",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T12:51:58.586Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 209,
+  "fields": {
+    "space": 18,
+    "slot_id": "S018-004",
+    "label": "Slot 4",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T12:51:58.586Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 210,
+  "fields": {
+    "space": 18,
+    "slot_id": "S018-005",
+    "label": "Slot 5",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T12:51:58.587Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 211,
+  "fields": {
+    "space": 19,
+    "slot_id": "S019-001",
+    "label": "Slot 1",
+    "is_occupied": true,
+    "is_active": true,
+    "created_at": "2026-04-05T15:04:21.008Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 212,
+  "fields": {
+    "space": 19,
+    "slot_id": "S019-002",
+    "label": "Slot 2",
+    "is_occupied": true,
+    "is_active": true,
+    "created_at": "2026-04-05T15:04:21.010Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 213,
+  "fields": {
+    "space": 19,
+    "slot_id": "S019-003",
+    "label": "Slot 3",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T15:04:21.012Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 214,
+  "fields": {
+    "space": 19,
+    "slot_id": "S019-004",
+    "label": "Slot 4",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T15:04:21.014Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 215,
+  "fields": {
+    "space": 19,
+    "slot_id": "S019-005",
+    "label": "Slot 5",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T15:04:21.015Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 216,
+  "fields": {
+    "space": 19,
+    "slot_id": "S019-006",
+    "label": "Slot 6",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T15:04:21.016Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 217,
+  "fields": {
+    "space": 19,
+    "slot_id": "S019-007",
+    "label": "Slot 7",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T15:04:21.016Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 218,
+  "fields": {
+    "space": 19,
+    "slot_id": "S019-008",
+    "label": "Slot 8",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T15:04:21.017Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 219,
+  "fields": {
+    "space": 19,
+    "slot_id": "S019-009",
+    "label": "Slot 9",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T15:04:21.017Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 220,
+  "fields": {
+    "space": 19,
+    "slot_id": "S019-010",
+    "label": "Slot 10",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T15:04:21.017Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 221,
+  "fields": {
+    "space": 19,
+    "slot_id": "S019-011",
+    "label": "Slot 11",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T15:04:21.018Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 222,
+  "fields": {
+    "space": 19,
+    "slot_id": "S019-012",
+    "label": "Slot 12",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-05T15:04:21.018Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 223,
+  "fields": {
+    "space": 20,
+    "slot_id": "S020-001",
+    "label": "Slot 1",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-06T04:52:19.260Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 224,
+  "fields": {
+    "space": 20,
+    "slot_id": "S020-002",
+    "label": "Slot 2",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-06T04:52:19.262Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 225,
+  "fields": {
+    "space": 20,
+    "slot_id": "S020-003",
+    "label": "Slot 3",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-06T04:52:19.263Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 226,
+  "fields": {
+    "space": 20,
+    "slot_id": "S020-004",
+    "label": "Slot 4",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-06T04:52:19.263Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 227,
+  "fields": {
+    "space": 20,
+    "slot_id": "S020-005",
+    "label": "Slot 5",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-06T04:52:19.264Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 228,
+  "fields": {
+    "space": 21,
+    "slot_id": "S021-001",
+    "label": "Slot 1",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-06T16:05:50.470Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 229,
+  "fields": {
+    "space": 21,
+    "slot_id": "S021-002",
+    "label": "Slot 2",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-06T16:05:50.476Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 230,
+  "fields": {
+    "space": 21,
+    "slot_id": "S021-003",
+    "label": "Slot 3",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-06T16:05:50.477Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 231,
+  "fields": {
+    "space": 21,
+    "slot_id": "S021-004",
+    "label": "Slot 4",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-06T16:05:50.478Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 232,
+  "fields": {
+    "space": 21,
+    "slot_id": "S021-005",
+    "label": "Slot 5",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-06T16:05:50.479Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 233,
+  "fields": {
+    "space": 22,
+    "slot_id": "S022-001",
+    "label": "Slot 1",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-07T04:19:10.735Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 234,
+  "fields": {
+    "space": 22,
+    "slot_id": "S022-002",
+    "label": "Slot 2",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-07T04:19:10.739Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 235,
+  "fields": {
+    "space": 22,
+    "slot_id": "S022-003",
+    "label": "Slot 3",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-07T04:19:10.741Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 236,
+  "fields": {
+    "space": 22,
+    "slot_id": "S022-004",
+    "label": "Slot 4",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-07T04:19:10.742Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 237,
+  "fields": {
+    "space": 22,
+    "slot_id": "S022-005",
+    "label": "Slot 5",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-07T04:19:10.743Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 238,
+  "fields": {
+    "space": 23,
+    "slot_id": "S023-001",
+    "label": "Slot 1",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-07T04:41:46.714Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 239,
+  "fields": {
+    "space": 23,
+    "slot_id": "S023-002",
+    "label": "Slot 2",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-07T04:41:46.717Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 240,
+  "fields": {
+    "space": 23,
+    "slot_id": "S023-003",
+    "label": "Slot 3",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-07T04:41:46.718Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 241,
+  "fields": {
+    "space": 23,
+    "slot_id": "S023-004",
+    "label": "Slot 4",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-07T04:41:46.719Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 242,
+  "fields": {
+    "space": 23,
+    "slot_id": "S023-005",
+    "label": "Slot 5",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-07T04:41:46.719Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 243,
+  "fields": {
+    "space": 24,
+    "slot_id": "S024-001",
+    "label": "Slot 1",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-07T04:58:00.400Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 244,
+  "fields": {
+    "space": 24,
+    "slot_id": "S024-002",
+    "label": "Slot 2",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-07T04:58:00.401Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 245,
+  "fields": {
+    "space": 24,
+    "slot_id": "S024-003",
+    "label": "Slot 3",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-07T04:58:00.402Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 246,
+  "fields": {
+    "space": 24,
+    "slot_id": "S024-004",
+    "label": "Slot 4",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-07T04:58:00.402Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 247,
+  "fields": {
+    "space": 24,
+    "slot_id": "S024-005",
+    "label": "Slot 5",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-07T04:58:00.403Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 248,
+  "fields": {
+    "space": 25,
+    "slot_id": "S025-001",
+    "label": "Slot 1",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-07T05:52:01.402Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 249,
+  "fields": {
+    "space": 25,
+    "slot_id": "S025-002",
+    "label": "Slot 2",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-07T05:52:01.404Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 250,
+  "fields": {
+    "space": 25,
+    "slot_id": "S025-003",
+    "label": "Slot 3",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-07T05:52:01.405Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 251,
+  "fields": {
+    "space": 25,
+    "slot_id": "S025-004",
+    "label": "Slot 4",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-07T05:52:01.405Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 252,
+  "fields": {
+    "space": 25,
+    "slot_id": "S025-005",
+    "label": "Slot 5",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-07T05:52:01.406Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 253,
+  "fields": {
+    "space": 26,
+    "slot_id": "S026-001",
+    "label": "Slot 1",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T11:05:38.061Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 254,
+  "fields": {
+    "space": 26,
+    "slot_id": "S026-002",
+    "label": "Slot 2",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T11:05:38.063Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 255,
+  "fields": {
+    "space": 26,
+    "slot_id": "S026-003",
+    "label": "Slot 3",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T11:05:38.065Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 256,
+  "fields": {
+    "space": 26,
+    "slot_id": "S026-004",
+    "label": "Slot 4",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T11:05:38.065Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 257,
+  "fields": {
+    "space": 26,
+    "slot_id": "S026-005",
+    "label": "Slot 5",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T11:05:38.066Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 258,
+  "fields": {
+    "space": 27,
+    "slot_id": "S027-001",
+    "label": "Slot 1",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T11:13:20.931Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 259,
+  "fields": {
+    "space": 27,
+    "slot_id": "S027-002",
+    "label": "Slot 2",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T11:13:20.933Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 260,
+  "fields": {
+    "space": 27,
+    "slot_id": "S027-003",
+    "label": "Slot 3",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T11:13:20.933Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 261,
+  "fields": {
+    "space": 27,
+    "slot_id": "S027-004",
+    "label": "Slot 4",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T11:13:20.934Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 262,
+  "fields": {
+    "space": 27,
+    "slot_id": "S027-005",
+    "label": "Slot 5",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T11:13:20.935Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 263,
+  "fields": {
+    "space": 28,
+    "slot_id": "S028-001",
+    "label": "Slot 1",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T11:20:14.645Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 264,
+  "fields": {
+    "space": 28,
+    "slot_id": "S028-002",
+    "label": "Slot 2",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T11:20:14.649Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 265,
+  "fields": {
+    "space": 28,
+    "slot_id": "S028-003",
+    "label": "Slot 3",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T11:20:14.650Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 266,
+  "fields": {
+    "space": 28,
+    "slot_id": "S028-004",
+    "label": "Slot 4",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T11:20:14.652Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 267,
+  "fields": {
+    "space": 28,
+    "slot_id": "S028-005",
+    "label": "Slot 5",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T11:20:14.653Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 268,
+  "fields": {
+    "space": 29,
+    "slot_id": "S029-001",
+    "label": "Slot 1",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T11:25:39.471Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 269,
+  "fields": {
+    "space": 29,
+    "slot_id": "S029-002",
+    "label": "Slot 2",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T11:25:39.473Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 270,
+  "fields": {
+    "space": 29,
+    "slot_id": "S029-003",
+    "label": "Slot 3",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T11:25:39.475Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 271,
+  "fields": {
+    "space": 29,
+    "slot_id": "S029-004",
+    "label": "Slot 4",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T11:25:39.476Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 272,
+  "fields": {
+    "space": 29,
+    "slot_id": "S029-005",
+    "label": "Slot 5",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T11:25:39.477Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 273,
+  "fields": {
+    "space": 30,
+    "slot_id": "S030-001",
+    "label": "Slot 1",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T11:48:39.275Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 274,
+  "fields": {
+    "space": 30,
+    "slot_id": "S030-002",
+    "label": "Slot 2",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T11:48:39.277Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 275,
+  "fields": {
+    "space": 30,
+    "slot_id": "S030-003",
+    "label": "Slot 3",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T11:48:39.278Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 276,
+  "fields": {
+    "space": 30,
+    "slot_id": "S030-004",
+    "label": "Slot 4",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T11:48:39.279Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 277,
+  "fields": {
+    "space": 30,
+    "slot_id": "S030-005",
+    "label": "Slot 5",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T11:48:39.279Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 278,
+  "fields": {
+    "space": 31,
+    "slot_id": "S031-001",
+    "label": "Slot 1",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T12:01:47.414Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 279,
+  "fields": {
+    "space": 31,
+    "slot_id": "S031-002",
+    "label": "Slot 2",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T12:01:47.417Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 280,
+  "fields": {
+    "space": 31,
+    "slot_id": "S031-003",
+    "label": "Slot 3",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T12:01:47.418Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 281,
+  "fields": {
+    "space": 31,
+    "slot_id": "S031-004",
+    "label": "Slot 4",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T12:01:47.419Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 282,
+  "fields": {
+    "space": 31,
+    "slot_id": "S031-005",
+    "label": "Slot 5",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T12:01:47.419Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 283,
+  "fields": {
+    "space": 32,
+    "slot_id": "S032-001",
+    "label": "Slot 1",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T12:30:07.660Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 284,
+  "fields": {
+    "space": 32,
+    "slot_id": "S032-002",
+    "label": "Slot 2",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T12:30:07.663Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 285,
+  "fields": {
+    "space": 32,
+    "slot_id": "S032-003",
+    "label": "Slot 3",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T12:30:07.664Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 286,
+  "fields": {
+    "space": 32,
+    "slot_id": "S032-004",
+    "label": "Slot 4",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T12:30:07.664Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 287,
+  "fields": {
+    "space": 32,
+    "slot_id": "S032-005",
+    "label": "Slot 5",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T12:30:07.665Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 288,
+  "fields": {
+    "space": 33,
+    "slot_id": "S033-001",
+    "label": "Slot 1",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T12:41:30.501Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 289,
+  "fields": {
+    "space": 33,
+    "slot_id": "S033-002",
+    "label": "Slot 2",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T12:41:30.502Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 290,
+  "fields": {
+    "space": 33,
+    "slot_id": "S033-003",
+    "label": "Slot 3",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T12:41:30.503Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 291,
+  "fields": {
+    "space": 33,
+    "slot_id": "S033-004",
+    "label": "Slot 4",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T12:41:30.504Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 292,
+  "fields": {
+    "space": 33,
+    "slot_id": "S033-005",
+    "label": "Slot 5",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T12:41:30.505Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 293,
+  "fields": {
+    "space": 34,
+    "slot_id": "S034-001",
+    "label": "Slot 1",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T12:51:18.769Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 294,
+  "fields": {
+    "space": 34,
+    "slot_id": "S034-002",
+    "label": "Slot 2",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T12:51:18.770Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 295,
+  "fields": {
+    "space": 34,
+    "slot_id": "S034-003",
+    "label": "Slot 3",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T12:51:18.770Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 296,
+  "fields": {
+    "space": 34,
+    "slot_id": "S034-004",
+    "label": "Slot 4",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T12:51:18.770Z"
+  }
+},
+{
+  "model": "api.parkingslot",
+  "pk": 297,
+  "fields": {
+    "space": 34,
+    "slot_id": "S034-005",
+    "label": "Slot 5",
+    "is_occupied": false,
+    "is_active": true,
+    "created_at": "2026-04-12T12:51:18.771Z"
+  }
+},
+{
+  "model": "api.reservation",
+  "pk": 1,
+  "fields": {
+    "user": 6,
+    "slot": 1,
+    "reservation_id": "PKG2026030908521461",
+    "start_time": "2026-03-09T08:52:24.664Z",
+    "end_time": "2026-03-09T08:52:27.398Z",
+    "amount": "0.05",
+    "is_paid": true,
+    "booking_fee": "1.00",
+    "booking_fee_paid": true,
+    "checkin_time": "2026-03-09T08:52:24.664Z",
+    "checkout_time": "2026-03-09T08:52:27.398Z",
+    "final_fee": "0.05",
+    "final_fee_paid": true,
+    "hourly_rate": "2.40",
+    "status": "completed",
+    "qr_code": "BOOKING|S01|PKG2026030908521461",
+    "qr_image": "",
+    "vehicle_number": "",
+    "vehicle_type": "",
+    "created_at": "2026-03-09T08:52:14.470Z"
+  }
+},
+{
+  "model": "api.reservation",
+  "pk": 2,
+  "fields": {
+    "user": 6,
+    "slot": 1,
+    "reservation_id": "PKG2026030909004761",
+    "start_time": "2026-03-09T09:00:47.808Z",
+    "end_time": "2026-03-09T09:00:47.808Z",
+    "amount": "0.00",
+    "is_paid": false,
+    "booking_fee": "1.00",
+    "booking_fee_paid": true,
+    "checkin_time": null,
+    "checkout_time": null,
+    "final_fee": null,
+    "final_fee_paid": false,
+    "hourly_rate": "2.40",
+    "status": "reserved",
+    "qr_code": "BOOKING|S01|PKG2026030909004761",
+    "qr_image": "",
+    "vehicle_number": "",
+    "vehicle_type": "",
+    "created_at": "2026-03-09T09:00:47.809Z"
+  }
+},
+{
+  "model": "api.reservation",
+  "pk": 3,
+  "fields": {
+    "user": 6,
+    "slot": 11,
+    "reservation_id": "PKG20260309113323611",
+    "start_time": "2026-03-09T11:33:23.734Z",
+    "end_time": "2026-03-09T11:33:23.734Z",
+    "amount": "0.00",
+    "is_paid": false,
+    "booking_fee": "1.00",
+    "booking_fee_paid": false,
+    "checkin_time": null,
+    "checkout_time": null,
+    "final_fee": null,
+    "final_fee_paid": false,
+    "hourly_rate": "2.40",
+    "status": "pending_booking_payment",
+    "qr_code": "",
+    "qr_image": "",
+    "vehicle_number": "",
+    "vehicle_type": "",
+    "created_at": "2026-03-09T11:33:23.746Z"
+  }
+},
+{
+  "model": "api.reservation",
+  "pk": 4,
+  "fields": {
+    "user": 12,
+    "slot": 86,
+    "reservation_id": "PKG202603091154091286",
+    "start_time": "2026-03-09T11:54:09.032Z",
+    "end_time": "2026-03-09T11:54:09.032Z",
+    "amount": "0.00",
+    "is_paid": false,
+    "booking_fee": "1.00",
+    "booking_fee_paid": false,
+    "checkin_time": null,
+    "checkout_time": null,
+    "final_fee": null,
+    "final_fee_paid": false,
+    "hourly_rate": "2.40",
+    "status": "pending_booking_payment",
+    "qr_code": "",
+    "qr_image": "",
+    "vehicle_number": "",
+    "vehicle_type": "",
+    "created_at": "2026-03-09T11:54:09.034Z"
+  }
+},
+{
+  "model": "api.reservation",
+  "pk": 5,
+  "fields": {
+    "user": 12,
+    "slot": 13,
+    "reservation_id": "PKG202603091154381213",
+    "start_time": "2026-03-09T11:54:38.681Z",
+    "end_time": "2026-03-09T11:54:38.681Z",
+    "amount": "0.00",
+    "is_paid": false,
+    "booking_fee": "1.00",
+    "booking_fee_paid": true,
+    "checkin_time": null,
+    "checkout_time": null,
+    "final_fee": null,
+    "final_fee_paid": false,
+    "hourly_rate": "2.40",
+    "status": "reserved",
+    "qr_code": "BOOKING|S002-003|PKG202603091154381213",
+    "qr_image": "",
+    "vehicle_number": "",
+    "vehicle_type": "",
+    "created_at": "2026-03-09T11:54:38.682Z"
+  }
+},
+{
+  "model": "api.reservation",
+  "pk": 6,
+  "fields": {
+    "user": 6,
+    "slot": 2,
+    "reservation_id": "PKG2026032504062962",
+    "start_time": "2026-03-25T04:06:50.092Z",
+    "end_time": "2026-03-25T04:06:51.773Z",
+    "amount": "0.05",
+    "is_paid": false,
+    "booking_fee": "1.00",
+    "booking_fee_paid": true,
+    "checkin_time": "2026-03-25T04:06:50.092Z",
+    "checkout_time": "2026-03-25T04:06:51.773Z",
+    "final_fee": "0.05",
+    "final_fee_paid": false,
+    "hourly_rate": "2.40",
+    "status": "checked_out",
+    "qr_code": "BOOKING|S02|PKG2026032504062962",
+    "qr_image": "",
+    "vehicle_number": "",
+    "vehicle_type": "",
+    "created_at": "2026-03-25T04:06:29.539Z"
+  }
+},
+{
+  "model": "api.reservation",
+  "pk": 7,
+  "fields": {
+    "user": 6,
+    "slot": 2,
+    "reservation_id": "PKG2026032504105462",
+    "start_time": "2026-03-25T04:10:54.196Z",
+    "end_time": "2026-03-25T04:10:54.196Z",
+    "amount": "0.00",
+    "is_paid": false,
+    "booking_fee": "1.00",
+    "booking_fee_paid": true,
+    "checkin_time": null,
+    "checkout_time": null,
+    "final_fee": null,
+    "final_fee_paid": false,
+    "hourly_rate": "2.40",
+    "status": "reserved",
+    "qr_code": "BOOKING|S02|PKG2026032504105462",
+    "qr_image": "",
+    "vehicle_number": "",
+    "vehicle_type": "",
+    "created_at": "2026-03-25T04:10:54.197Z"
+  }
+},
+{
+  "model": "api.reservation",
+  "pk": 8,
+  "fields": {
+    "user": 6,
+    "slot": 87,
+    "reservation_id": "PKG20260325043554687",
+    "start_time": "2026-03-25T04:35:54.341Z",
+    "end_time": "2026-03-25T04:35:54.341Z",
+    "amount": "0.00",
+    "is_paid": false,
+    "booking_fee": "1.00",
+    "booking_fee_paid": true,
+    "checkin_time": null,
+    "checkout_time": null,
+    "final_fee": null,
+    "final_fee_paid": false,
+    "hourly_rate": "2.40",
+    "status": "reserved",
+    "qr_code": "BOOKING|S003-002|PKG20260325043554687",
+    "qr_image": "",
+    "vehicle_number": "",
+    "vehicle_type": "",
+    "created_at": "2026-03-25T04:35:54.342Z"
+  }
+},
+{
+  "model": "api.reservation",
+  "pk": 9,
+  "fields": {
+    "user": 6,
+    "slot": 88,
+    "reservation_id": "PKG20260325050042688",
+    "start_time": "2026-03-25T05:00:48.260Z",
+    "end_time": "2026-03-25T05:00:49.537Z",
+    "amount": "0.05",
+    "is_paid": true,
+    "booking_fee": "1.00",
+    "booking_fee_paid": true,
+    "checkin_time": "2026-03-25T05:00:48.260Z",
+    "checkout_time": "2026-03-25T05:00:49.537Z",
+    "final_fee": "0.05",
+    "final_fee_paid": true,
+    "hourly_rate": "2.40",
+    "status": "completed",
+    "qr_code": "BOOKING|S003-003|PKG20260325050042688",
+    "qr_image": "qr/PKG20260325050042688.png",
+    "vehicle_number": "",
+    "vehicle_type": "",
+    "created_at": "2026-03-25T05:00:42.019Z"
+  }
+},
+{
+  "model": "api.reservation",
+  "pk": 10,
+  "fields": {
+    "user": 6,
+    "slot": 88,
+    "reservation_id": "PKG20260325054654688",
+    "start_time": "2026-03-25T05:46:54.010Z",
+    "end_time": "2026-03-25T05:46:54.010Z",
+    "amount": "0.00",
+    "is_paid": false,
+    "booking_fee": "1.00",
+    "booking_fee_paid": true,
+    "checkin_time": null,
+    "checkout_time": null,
+    "final_fee": null,
+    "final_fee_paid": false,
+    "hourly_rate": "2.40",
+    "status": "reserved",
+    "qr_code": "BOOKING|S003-003|PKG20260325054654688",
+    "qr_image": "qr/PKG20260325054654688/PKG20260325054654688.png",
+    "vehicle_number": "",
+    "vehicle_type": "",
+    "created_at": "2026-03-25T05:46:54.012Z"
+  }
+},
+{
+  "model": "api.reservation",
+  "pk": 11,
+  "fields": {
+    "user": 6,
+    "slot": 89,
+    "reservation_id": "PKG20260325060033689",
+    "start_time": "2026-03-25T06:28:23.174Z",
+    "end_time": "2026-03-25T06:28:47.320Z",
+    "amount": "0.05",
+    "is_paid": false,
+    "booking_fee": "1.00",
+    "booking_fee_paid": true,
+    "checkin_time": "2026-03-25T06:28:23.174Z",
+    "checkout_time": "2026-03-25T06:28:47.320Z",
+    "final_fee": "0.05",
+    "final_fee_paid": false,
+    "hourly_rate": "2.40",
+    "status": "checked_out",
+    "qr_code": "BOOKING|S003-004|PKG20260325060033689",
+    "qr_image": "qr/PKG20260325060033689/PKG20260325060033689.png",
+    "vehicle_number": "",
+    "vehicle_type": "",
+    "created_at": "2026-03-25T06:00:33.986Z"
+  }
+},
+{
+  "model": "api.reservation",
+  "pk": 12,
+  "fields": {
+    "user": 6,
+    "slot": 211,
+    "reservation_id": "PKG202604051532036211",
+    "start_time": "2026-04-05T15:32:09.031Z",
+    "end_time": "2026-04-05T15:32:10.443Z",
+    "amount": "0.05",
+    "is_paid": true,
+    "booking_fee": "1.00",
+    "booking_fee_paid": true,
+    "checkin_time": "2026-04-05T15:32:09.031Z",
+    "checkout_time": "2026-04-05T15:32:10.443Z",
+    "final_fee": "0.05",
+    "final_fee_paid": true,
+    "hourly_rate": "2.40",
+    "status": "completed",
+    "qr_code": "BOOKING|S019-001|PKG202604051532036211",
+    "qr_image": "qr/PKG202604051532036211/PKG202604051532036211.png",
+    "vehicle_number": "",
+    "vehicle_type": "",
+    "created_at": "2026-04-05T15:32:03.831Z"
+  }
+},
+{
+  "model": "api.reservation",
+  "pk": 13,
+  "fields": {
+    "user": 6,
+    "slot": 211,
+    "reservation_id": "PKG202604051551176211",
+    "start_time": "2026-04-05T15:51:23.541Z",
+    "end_time": "2026-04-05T15:51:24.453Z",
+    "amount": "0.05",
+    "is_paid": true,
+    "booking_fee": "1.00",
+    "booking_fee_paid": true,
+    "checkin_time": "2026-04-05T15:51:23.541Z",
+    "checkout_time": "2026-04-05T15:51:24.453Z",
+    "final_fee": "0.05",
+    "final_fee_paid": true,
+    "hourly_rate": "2.40",
+    "status": "completed",
+    "qr_code": "BOOKING|S019-001|PKG202604051551176211",
+    "qr_image": "qr/PKG202604051551176211/PKG202604051551176211.png",
+    "vehicle_number": "KL07D5959",
+    "vehicle_type": "sedan",
+    "created_at": "2026-04-05T15:51:17.563Z"
+  }
+},
+{
+  "model": "api.reservation",
+  "pk": 14,
+  "fields": {
+    "user": 6,
+    "slot": 4,
+    "reservation_id": "PKG2026040520050664",
+    "start_time": "2026-04-05T20:05:06.433Z",
+    "end_time": "2026-04-05T20:05:06.433Z",
+    "amount": "0.00",
+    "is_paid": false,
+    "booking_fee": "1.00",
+    "booking_fee_paid": true,
+    "checkin_time": null,
+    "checkout_time": null,
+    "final_fee": null,
+    "final_fee_paid": false,
+    "hourly_rate": "2.40",
+    "status": "reserved",
+    "qr_code": "BOOKING|S04|PKG2026040520050664",
+    "qr_image": "qr/PKG2026040520050664/PKG2026040520050664.png",
+    "vehicle_number": "GUGH",
+    "vehicle_type": "suv",
+    "created_at": "2026-04-05T20:05:06.435Z"
+  }
+},
+{
+  "model": "api.reservation",
+  "pk": 15,
+  "fields": {
+    "user": 6,
+    "slot": 211,
+    "reservation_id": "PKG202604070506126211",
+    "start_time": "2026-04-07T05:06:22.018Z",
+    "end_time": "2026-04-07T05:06:24.423Z",
+    "amount": "0.05",
+    "is_paid": true,
+    "booking_fee": "1.00",
+    "booking_fee_paid": true,
+    "checkin_time": "2026-04-07T05:06:22.018Z",
+    "checkout_time": "2026-04-07T05:06:24.423Z",
+    "final_fee": "0.05",
+    "final_fee_paid": true,
+    "hourly_rate": "2.40",
+    "status": "completed",
+    "qr_code": "BOOKING|S019-001|PKG202604070506126211",
+    "qr_image": "qr/PKG202604070506126211/PKG202604070506126211.png",
+    "vehicle_number": "KL53426",
+    "vehicle_type": "pickup",
+    "created_at": "2026-04-07T05:06:12.246Z"
+  }
+},
+{
+  "model": "api.reservation",
+  "pk": 16,
+  "fields": {
+    "user": 6,
+    "slot": 211,
+    "reservation_id": "PKG202604070547426211",
+    "start_time": "2026-04-07T05:48:28.490Z",
+    "end_time": "2026-04-07T05:47:42.133Z",
+    "amount": "0.00",
+    "is_paid": false,
+    "booking_fee": "1.00",
+    "booking_fee_paid": true,
+    "checkin_time": "2026-04-07T05:48:28.490Z",
+    "checkout_time": null,
+    "final_fee": null,
+    "final_fee_paid": false,
+    "hourly_rate": "2.40",
+    "status": "checked_in",
+    "qr_code": "BOOKING|S019-001|PKG202604070547426211",
+    "qr_image": "qr/PKG202604070547426211/PKG202604070547426211.png",
+    "vehicle_number": "KL 64",
+    "vehicle_type": "suv",
+    "created_at": "2026-04-07T05:47:42.135Z"
+  }
+},
+{
+  "model": "api.reservation",
+  "pk": 17,
+  "fields": {
+    "user": 6,
+    "slot": 5,
+    "reservation_id": "PKG2026040705493665",
+    "start_time": "2026-04-07T05:49:43.452Z",
+    "end_time": "2026-04-07T05:50:11.089Z",
+    "amount": "0.05",
+    "is_paid": true,
+    "booking_fee": "1.00",
+    "booking_fee_paid": true,
+    "checkin_time": "2026-04-07T05:49:43.452Z",
+    "checkout_time": "2026-04-07T05:50:11.089Z",
+    "final_fee": "0.05",
+    "final_fee_paid": true,
+    "hourly_rate": "2.40",
+    "status": "completed",
+    "qr_code": "BOOKING|S05|PKG2026040705493665",
+    "qr_image": "qr/PKG2026040705493665/PKG2026040705493665.png",
+    "vehicle_number": "HKH",
+    "vehicle_type": "suv",
+    "created_at": "2026-04-07T05:49:36.025Z"
+  }
+},
+{
+  "model": "api.reservation",
+  "pk": 18,
+  "fields": {
+    "user": 6,
+    "slot": 90,
+    "reservation_id": "PKG20260412090312690",
+    "start_time": "2026-04-12T09:03:24.192Z",
+    "end_time": "2026-04-12T09:03:12.541Z",
+    "amount": "0.00",
+    "is_paid": false,
+    "booking_fee": "20.00",
+    "booking_fee_paid": true,
+    "checkin_time": "2026-04-12T09:03:24.192Z",
+    "checkout_time": null,
+    "final_fee": null,
+    "final_fee_paid": false,
+    "hourly_rate": "45.00",
+    "status": "checked_in",
+    "qr_code": "BOOKING|S003-005|PKG20260412090312690",
+    "qr_image": "qr/PKG20260412090312690/PKG20260412090312690.png",
+    "vehicle_number": "KL07D544",
+    "vehicle_type": "suv",
+    "created_at": "2026-04-12T09:03:12.542Z"
+  }
+},
+{
+  "model": "api.reservation",
+  "pk": 19,
+  "fields": {
+    "user": 6,
+    "slot": 212,
+    "reservation_id": "PKG202604120904376212",
+    "start_time": "2026-04-12T09:04:43.399Z",
+    "end_time": "2026-04-12T09:04:37.354Z",
+    "amount": "0.00",
+    "is_paid": false,
+    "booking_fee": "20.00",
+    "booking_fee_paid": true,
+    "checkin_time": "2026-04-12T09:04:43.399Z",
+    "checkout_time": null,
+    "final_fee": null,
+    "final_fee_paid": false,
+    "hourly_rate": "30.00",
+    "status": "checked_in",
+    "qr_code": "BOOKING|S019-002|PKG202604120904376212",
+    "qr_image": "qr/PKG202604120904376212/PKG202604120904376212.png",
+    "vehicle_number": "LK07D464",
+    "vehicle_type": "sedan",
+    "created_at": "2026-04-12T09:04:37.355Z"
+  }
+},
+{
+  "model": "api.reservation",
+  "pk": 20,
+  "fields": {
+    "user": 6,
+    "slot": 23,
+    "reservation_id": "PKG20260412092930623",
+    "start_time": "2026-04-12T09:29:36.010Z",
+    "end_time": "2026-04-12T09:29:37.026Z",
+    "amount": "0.90",
+    "is_paid": true,
+    "booking_fee": "20.00",
+    "booking_fee_paid": true,
+    "checkin_time": "2026-04-12T09:29:36.010Z",
+    "checkout_time": "2026-04-12T09:29:37.026Z",
+    "final_fee": "0.90",
+    "final_fee_paid": true,
+    "hourly_rate": "45.00",
+    "status": "completed",
+    "qr_code": "BOOKING|S002-013|PKG20260412092930623",
+    "qr_image": "qr/PKG20260412092930623/PKG20260412092930623.png",
+    "vehicle_number": "KL60G8Y32",
+    "vehicle_type": "suv",
+    "created_at": "2026-04-12T09:29:30.878Z"
+  }
+},
+{
+  "model": "api.paymentrecord",
+  "pk": 1,
+  "fields": {
+    "reservation": 18,
+    "user": 6,
+    "user_full_name": "raj",
+    "user_email": "raj@gmail.com",
+    "user_phone": "8451651684",
+    "slot_id": "S003-005",
+    "slot_label": "Slot 5",
+    "parking_space_name": "PARKING",
+    "parking_space_location": "Edapally",
+    "payment_type": "booking",
+    "amount": "20.00",
+    "paid_at": "2026-04-12T09:03:17.531Z",
+    "transaction_ref": "BKG-PKG20260412090312690"
+  }
+},
+{
+  "model": "api.paymentrecord",
+  "pk": 2,
+  "fields": {
+    "reservation": 19,
+    "user": 6,
+    "user_full_name": "raj",
+    "user_email": "raj@gmail.com",
+    "user_phone": "8451651684",
+    "slot_id": "S019-002",
+    "slot_label": "Slot 2",
+    "parking_space_name": "kakkanad parking",
+    "parking_space_location": "https://maps.app.goo.gl/tw7xAgpN8mRdFJBQ9",
+    "payment_type": "booking",
+    "amount": "20.00",
+    "paid_at": "2026-04-12T09:04:41.067Z",
+    "transaction_ref": "BKG-PKG202604120904376212"
+  }
+},
+{
+  "model": "api.paymentrecord",
+  "pk": 3,
+  "fields": {
+    "reservation": 20,
+    "user": 6,
+    "user_full_name": "raj",
+    "user_email": "raj@gmail.com",
+    "user_phone": "8451651684",
+    "slot_id": "S002-013",
+    "slot_label": "Slot 13",
+    "parking_space_name": "NewParking",
+    "parking_space_location": "kakkanad",
+    "payment_type": "booking",
+    "amount": "20.00",
+    "paid_at": "2026-04-12T09:29:33.555Z",
+    "transaction_ref": "BKG-PKG20260412092930623"
+  }
+},
+{
+  "model": "api.paymentrecord",
+  "pk": 4,
+  "fields": {
+    "reservation": 20,
+    "user": 6,
+    "user_full_name": "raj",
+    "user_email": "raj@gmail.com",
+    "user_phone": "8451651684",
+    "slot_id": "S002-013",
+    "slot_label": "Slot 13",
+    "parking_space_name": "NewParking",
+    "parking_space_location": "kakkanad",
+    "payment_type": "final",
+    "amount": "0.90",
+    "paid_at": "2026-04-12T09:29:38.600Z",
+    "transaction_ref": "FIN-PKG20260412092930623"
+  }
+}
+]

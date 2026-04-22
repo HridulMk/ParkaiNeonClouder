@@ -9,6 +9,7 @@ import 'dart:ui';
 import '../services/auth_service.dart';
 import '../widgets/app_floating_nav.dart';
 import 'dashboard.dart';
+import 'customer_dashboar.dart';
 import 'my_bookings.dart';
 import 'parking_list.dart';
 import 'welcome.dart';
@@ -29,7 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
       case 0:
         return const MyBookingsScreen();
       case 1:
-        return DashboardScreen();
+        return const CustomerDashboardScreen();
       case 2:
         return _HomeContent(key: const ValueKey('homeContent'), onSelect: _onNavTap);
       case 3:

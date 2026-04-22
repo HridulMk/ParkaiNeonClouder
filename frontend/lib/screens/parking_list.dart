@@ -8,6 +8,7 @@ import '../models/parking_slot.dart';
 import '../services/api_service.dart';
 import '../services/parking_service.dart';
 import '../utils/responsive_utils.dart';
+import 'live_map_screen.dart';
 import 'payment.dart';
 
 class ParkingListScreen extends StatefulWidget {
@@ -140,20 +141,41 @@ class _ParkingListScreenState extends State<ParkingListScreen> {
   Widget build(BuildContext context) {
     final isMobile = MediaQuery.of(context).size.width < 600;
 
-    return _isLoading
-        ? const Center(child: CircularProgressIndicator())
-        : _errorMessage != null
-            ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.error, size: 64, color: Colors.red),
-                    const SizedBox(height: 16),
-                    Text(_errorMessage!, textAlign: TextAlign.center),
-                    const SizedBox(height: 16),
-                    ElevatedButton(onPressed: _loadParkingSpaces, child: const Text('Retry')),
-                  ],
-                ),
+    return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: const Text('Parking Spaces'),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.map),
+              label: const Text('Live Map'),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+              onPressed: spaces.isEmpty
+                  ? null
+                  : () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => LiveMapScreen(parkingSpaces: spaces)),
+                      ),
+            ),
+          ),
+        ],
+      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _errorMessage != null
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error, size: 64, color: Colors.red),
+                      const SizedBox(height: 16),
+                      Text(_errorMessage!, textAlign: TextAlign.center),
+                      const SizedBox(height: 16),
+                      ElevatedButton(onPressed: _loadParkingSpaces, child: const Text('Retry')),
+                    ],
+                  ),
                 )
               : spaces.isEmpty
                   ? const Center(child: Text('No parking spaces uploaded by vendors yet.'))
@@ -258,7 +280,8 @@ class _ParkingListScreenState extends State<ParkingListScreen> {
                           ),
                         ],
                       ),
-                    );
+                    ),
+    );
   }
 }
 
@@ -441,6 +464,8 @@ class _SpaceSlotsBottomSheetState extends State<_SpaceSlotsBottomSheet> {
           ),
         ),
         const Divider(height: 1),
+        _SlotSummaryBar(slots: _slots),
+        const Divider(height: 1),
         Expanded(
           child: _slots.isEmpty
               ? const Center(child: Text('No slots available in this space.'))
@@ -491,6 +516,62 @@ class _SpaceSlotsBottomSheetState extends State<_SpaceSlotsBottomSheet> {
                   ),
                 ),
         ),
+      ],
+    );
+  }
+}
+
+class _SlotSummaryBar extends StatelessWidget {
+  final List<ParkingSlot> slots;
+  const _SlotSummaryBar({required this.slots});
+
+  @override
+  Widget build(BuildContext context) {
+    final total = slots.length;
+    final vacant = slots.where((s) => s.isActive && !s.isOccupied && !s.isReserved).length;
+    final occupied = slots.where((s) => s.isOccupied).length;
+    final reserved = slots.where((s) => s.isReserved && !s.isOccupied).length;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _SummaryChip(label: 'Total', value: total, color: Colors.blueGrey),
+          _SummaryChip(label: 'Vacant', value: vacant, color: Colors.green),
+          _SummaryChip(label: 'Occupied', value: occupied, color: Colors.red),
+          _SummaryChip(label: 'Reserved', value: reserved, color: Colors.orange),
+        ],
+      ),
+    );
+  }
+}
+
+class _SummaryChip extends StatelessWidget {
+  final String label;
+  final int value;
+  final Color color;
+  const _SummaryChip({required this.label, required this.value, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: color, width: 1),
+          ),
+          child: Text(
+            '$value',
+            style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(label, style: const TextStyle(fontSize: 11, color: Colors.black54)),
       ],
     );
   }

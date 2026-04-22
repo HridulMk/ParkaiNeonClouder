@@ -146,7 +146,7 @@ class ApiService {
       case 404:
         throw Exception('Resource not found');
       case 500:
-        throw Exception('Server error');
+        throw Exception(_extractErrorMessage(data) ?? 'Server error (500)');
       default:
         throw Exception('Something went wrong (${response.statusCode})');
     }

@@ -18,6 +18,7 @@ class _LogsScreenState extends State<LogsScreen> {
   String? _error;
   String? _selectedSpace;
   String? _userType;
+  String? _assignedSpaceName;
   String _selectedLogType = 'all'; // 'all', 'vehicle', 'reservations'
 
   @override
@@ -28,9 +29,16 @@ class _LogsScreenState extends State<LogsScreen> {
 
   Future<void> _loadUserTypeAndLogs() async {
     try {
-      _userType = await AuthService.getUserType();
+      final userData = await AuthService.getUserData();
+      _userType = userData?['user_type'];
+      if (_userType == 'security') {
+        _assignedSpaceName = userData?['assigned_parking_space_name']?.toString();
+        if (_assignedSpaceName != null && _assignedSpaceName!.isNotEmpty) {
+          _selectedSpace = _assignedSpaceName;
+        }
+      }
     } catch (e) {
-      // If we can't get user type, continue without it
+      // continue without user data
     }
     await _loadLogs();
   }
@@ -76,25 +84,21 @@ class _LogsScreenState extends State<LogsScreen> {
       
       if (!mounted) return;
 
-      // Sort by creation/check-in time (most recent first)
+      // Sort: for security, assigned space logs first, then by timestamp
       allLogs.sort((a, b) {
-        final aTime = _getLogTimestamp(a);
-        final bTime = _getLogTimestamp(b);
-        return bTime.compareTo(aTime);
+        if (_userType == 'security' && _assignedSpaceName != null) {
+          final aIsAssigned = _getSpaceName(a) == _assignedSpaceName ? 0 : 1;
+          final bIsAssigned = _getSpaceName(b) == _assignedSpaceName ? 0 : 1;
+          if (aIsAssigned != bIsAssigned) return aIsAssigned.compareTo(bIsAssigned);
+        }
+        return _getLogTimestamp(b).compareTo(_getLogTimestamp(a));
       });
 
       // Extract unique parking spaces
       final spaces = <String>{};
       for (final log in allLogs) {
-        if (log['space_name'] != null) {
-          spaces.add(log['space_name'].toString());
-        } else {
-          final slot = _slotMap(log);
-          final space = slot?['space'];
-          if (space is Map && space['name'] != null) {
-            spaces.add(space['name'].toString());
-          }
-        }
+        final name = _getSpaceName(log);
+        if (name.isNotEmpty) spaces.add(name);
       }
 
       setState(() {
@@ -156,11 +160,7 @@ class _LogsScreenState extends State<LogsScreen> {
     // Filter by space
     if (_selectedSpace != null && _selectedSpace!.isNotEmpty) {
       filtered = filtered.where((log) {
-        final slot = _slotMap(log);
-        final space = slot?['space'];
-        final spaceName = log['space_name']?.toString() ??
-            (space is Map ? space['name']?.toString() : null) ?? '';
-        return spaceName == _selectedSpace;
+        return _getSpaceName(log) == _selectedSpace;
       }).toList();
     }
 
@@ -169,10 +169,19 @@ class _LogsScreenState extends State<LogsScreen> {
     });
   }
 
-  Map<String, dynamic>? _slotMap(dynamic log) {
-    final slot = log['slot'];
-    return slot is Map<String, dynamic> ? slot : null;
+  // vehicle logs: space_name, slot_label (flat fields from VehicleLogSerializer)
+  // reservations: parking_space_name, slot_label (flat fields from ReservationSerializer)
+  String _getSpaceName(dynamic log) {
+    if (log['log_type'] == 'vehicle') {
+      return log['space_name']?.toString() ?? '';
+    }
+    return log['parking_space_name']?.toString() ?? '';
   }
+
+  String _getSlotLabel(dynamic log) {
+    return log['slot_label']?.toString() ?? 'N/A';
+  }
+
 
   String _getDurationText(dynamic log) {
     final durationHours = log['duration_hours'];
@@ -239,53 +248,7 @@ class _LogsScreenState extends State<LogsScreen> {
                     )
                   : Column(
                       children: [
-                        // Log type filter
-                        Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: DropdownButton<String>(
-                                  value: _selectedLogType,
-                                  hint: const Text(
-                                    'Log Type',
-                                    style: TextStyle(color: Colors.white54),
-                                  ),
-                                  isExpanded: true,
-                                  dropdownColor: const Color(0xFF161B22),
-                                  items: const [
-                                    DropdownMenuItem<String>(
-                                      value: 'all',
-                                      child: Text(
-                                        'All Logs',
-                                        style: TextStyle(color: Colors.white),
-                                      ),
-                                    ),
-                                    DropdownMenuItem<String>(
-                                      value: 'vehicle',
-                                      child: Text(
-                                        'Vehicle Logs',
-                                        style: TextStyle(color: Colors.white),
-                                      ),
-                                    ),
-                                    DropdownMenuItem<String>(
-                                      value: 'reservations',
-                                      child: Text(
-                                        'Reservations',
-                                        style: TextStyle(color: Colors.white),
-                                      ),
-                                    ),
-                                  ],
-                                  onChanged: (value) {
-                                    if (value != null) _filterByLogType(value);
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        // Space filter (only show for non-security users)
-                        if (_parkingSpaces.isNotEmpty && _userType != 'security')
+                                        if (_parkingSpaces.isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: DropdownButton<String>(
@@ -299,55 +262,23 @@ class _LogsScreenState extends State<LogsScreen> {
                               items: [
                                 const DropdownMenuItem<String>(
                                   value: null,
-                                  child: Text(
-                                    'All Spaces',
-                                    style: TextStyle(color: Colors.white),
-                                  ),
+                                  child: Text('All Spaces', style: TextStyle(color: Colors.white)),
                                 ),
-                                ..._parkingSpaces.map((space) {
-                                  return DropdownMenuItem<String>(
-                                    value: space,
-                                    child: Text(
-                                      space,
-                                      style: const TextStyle(color: Colors.white),
-                                    ),
-                                  );
-                                }),
+                                ..._parkingSpaces.map((space) => DropdownMenuItem<String>(
+                                  value: space,
+                                  child: Row(
+                                    children: [
+                                      if (_userType == 'security' && space == _assignedSpaceName)
+                                        const Padding(
+                                          padding: EdgeInsets.only(right: 6),
+                                          child: Icon(Icons.security, color: Colors.blueAccent, size: 14),
+                                        ),
+                                      Text(space, style: const TextStyle(color: Colors.white)),
+                                    ],
+                                  ),
+                                )),
                               ],
                               onChanged: _filterBySpace,
-                            ),
-                          ),
-                        // Show assigned space info for security users
-                        if (_userType == 'security' && _parkingSpaces.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.blueAccent.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.blueAccent.withOpacity(0.3)),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(
-                                    Icons.security,
-                                    color: Colors.blueAccent,
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      'Showing logs for: ${_parkingSpaces.first}',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
                             ),
                           ),
                         Expanded(
@@ -495,15 +426,11 @@ class _LogsScreenState extends State<LogsScreen> {
                                         children: [
                                           _LogDetailRow(
                                             label: 'Space',
-                                            value: isVehicleLog
-                                              ? (log['space_name']?.toString() ?? 'N/A')
-                                              : (() { final s = _slotMap(log)?['space']; return s is Map ? s['name']?.toString() ?? 'N/A' : 'N/A'; })(),
+                                            value: _getSpaceName(log).isEmpty ? 'N/A' : _getSpaceName(log),
                                           ),
                                           _LogDetailRow(
                                             label: 'Slot',
-                                            value: isVehicleLog
-                                              ? (log['slot_label']?.toString() ?? 'N/A')
-                                              : (_slotMap(log)?['label']?.toString() ?? 'N/A'),
+                                            value: _getSlotLabel(log),
                                           ),
                                           if (isVehicleLog) ...[
                                             _LogDetailRow(
@@ -536,8 +463,17 @@ class _LogsScreenState extends State<LogsScreen> {
                                                 value: _formatDateTime(log['checkout_time']),
                                               ),
                                             _LogDetailRow(
-                                              label: 'Amount',
-                                              value: '₹${log['amount']?.toString() ?? '0.00'}',
+                                              label: 'Booking Fee',
+                                              value: '₹${log['booking_fee']?.toString() ?? '0.00'}',
+                                            ),
+                                            if (log['final_fee'] != null)
+                                              _LogDetailRow(
+                                                label: 'Final Fee',
+                                                value: '₹${log['final_fee']}',
+                                              ),
+                                            _LogDetailRow(
+                                              label: 'Total Charged',
+                                              value: '₹${log['total_charged']?.toString() ?? '0.00'}',
                                             ),
                                           ],
                                         ],
