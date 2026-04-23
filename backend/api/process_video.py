@@ -4,11 +4,6 @@ import datetime
 from collections import Counter
 from typing import Any, Dict, List
 
-import cv2
-import numpy as np
-from ultralytics import YOLO
-import cvzone
-
 
 # ── Polygon helpers ─────────────────────────────────────────────
 
@@ -57,6 +52,14 @@ def _scale_polygons_to_frame(polygons: List, frame_w: int, frame_h: int, display
 # ── MAIN FUNCTION ─────────────────────────────────────────────
 
 def process_video(session_id: str, input_path: str, polygons_path: str, output_dir: str, model=None) -> Dict[str, Any]:
+
+    try:
+        import cv2
+        import numpy as np
+        from ultralytics import YOLO
+        import cvzone
+    except ImportError as e:
+        return {"success": False, "error": f"Missing dependency: {e}"}
 
     print("\n🚀 PROCESS VIDEO START")
     print("📌 Session:", session_id)

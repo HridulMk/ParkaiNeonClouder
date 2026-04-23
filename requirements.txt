@@ -16,6 +16,9 @@ cloudinary
 django-cloudinary-storage
 dj-database-url
 opencv-python-headless
+numpy>=1.26.4,<2.0
 ultralytics
 cvzone
-numpy
+lap
+easyocr
+imageio-ffmpeg
