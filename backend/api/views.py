@@ -435,8 +435,16 @@ class ParkingLotRunAnalysisEndpoint(APIView):
                 output_path,
                 resource_type="video",
                 folder=f"parking_results/{session_id}",
+                eager=[{"format": "mp4", "video_codec": "h264"}],
+                eager_async=False,
             )
-            output_url = upload_result.get("secure_url")
+
+            # Prefer the eager H.264 URL; fall back to the raw upload URL
+            eager = upload_result.get("eager")
+            if eager and len(eager) > 0:
+                output_url = eager[0].get("secure_url")
+            else:
+                output_url = upload_result.get("secure_url")
 
         except Exception as e:
             return Response(

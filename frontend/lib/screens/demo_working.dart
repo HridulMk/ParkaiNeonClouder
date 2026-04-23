@@ -463,9 +463,10 @@ Future<void> _submitDemo() async {
                       _buildAddSpaceButton(),
                       const SizedBox(height: 24),
                       _buildVideoUploadSection(),
-                      if (_selectedVideo != null && _videoController != null && _videoController!.value.isInitialized && !_videoSaved) _buildVideoPreview(),
+                      if (_selectedVideo != null) _buildVideoPreview(),
                       if (_selectedVideo != null) _buildSaveVideoButton(),
-                      if (_selectedVideo != null && _videoController != null && _videoController!.value.isInitialized && _videoSaved) ...[
+                      if (_selectedVideo != null && (_videoController == null || !_videoController!.value.isInitialized)) _buildVideoPreview(),
+                      if (_selectedVideo != null && _videoController != null && _videoController!.value.isInitialized) ...[
                         const SizedBox(height: 24),
                         const Text(
                           'Mark Parking Slots',
@@ -479,30 +480,6 @@ Future<void> _submitDemo() async {
                         _buildPolygonEditor(),
                         const SizedBox(height: 16),
                         _buildSavePolygonsButton(),
-                        if (_polygons.isNotEmpty && _polygonUrl != null)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 12),
-                            child: Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.green.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: Colors.greenAccent.withOpacity(0.4)),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.check_circle, color: Colors.greenAccent, size: 18),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      '${_polygons.length} zone(s) saved and visible above on the video. Ready for AI analysis.',
-                                      style: const TextStyle(color: Colors.greenAccent, fontSize: 13),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
                       ],
                       const SizedBox(height: 24),
                       _buildSubmitButton(),
@@ -767,64 +744,15 @@ Future<void> _submitDemo() async {
           color: Colors.white.withOpacity(0.05),
           border: Border.all(color: Colors.white.withOpacity(0.1)),
         ),
-        child: Column(
+        child: Row(
           children: [
-            Text(
-              'Video Preview: ${_selectedVideo!.name}',
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500, fontSize: 13),
-            ),
-            const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: AspectRatio(
-                aspectRatio: _videoController!.value.aspectRatio,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    SizedBox.expand(child: VideoPlayer(_videoController!)),
-                    if (_polygons.isNotEmpty)
-                      CustomPaint(
-                        painter: _PolygonPainter(
-                          polygons: _polygons,
-                          currentPolygon: const [],
-                          slotStatus: const [],
-                          sourceSize: _editorRenderSize.width > 0 ? _editorRenderSize : null,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(top: 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton(
-                    onPressed: () {
-                      setState(() {
-                        _videoController!.value.isPlaying
-                            ? _videoController!.pause()
-                            : _videoController!.play();
-                      });
-                    },
-                    icon: Icon(
-                      _videoController!.value.isPlaying ? Icons.pause : Icons.play_arrow,
-                      color: Colors.white,
-                    ),
-                  ),
-                  Expanded(
-                    child: VideoProgressIndicator(
-                      _videoController!,
-                      allowScrubbing: true,
-                      colors: const VideoProgressColors(
-                        playedColor: Colors.cyan,
-                        bufferedColor: Colors.cyanAccent,
-                        backgroundColor: Colors.white24,
-                      ),
-                    ),
-                  ),
-                ],
+            const SizedBox(width: 8, height: 8, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.cyan)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Loading: ${_selectedVideo!.name}',
+                style: const TextStyle(color: Colors.white70, fontSize: 13),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
@@ -1326,8 +1254,7 @@ Widget _buildResultsCard() {
             videoNativeSize: videoSize,
             onChanged: (polys) => setState(() {}),
             onSizeChanged: (size) => _editorRenderSize = size,
-            onFullscreenExited: _savePolygons,
-            videoController: _videoController!,
+            background: VideoPlayer(_videoController!),
           ),
         ),
         const SizedBox(height: 8),
@@ -1522,21 +1449,19 @@ class _LocationPickerScreenState extends State<_LocationPickerScreen> {
 class PolygonEditor extends StatefulWidget {
   final List<List<Offset>> polygons;
   final ValueChanged<List<List<Offset>>> onChanged;
-  final VideoPlayerController videoController;
+  final Widget background;
   final List<bool> slotStatus;
   final ValueChanged<Size>? onSizeChanged;
   final Size? videoNativeSize;
-  final VoidCallback? onFullscreenExited;
 
   const PolygonEditor({
     super.key,
     required this.polygons,
     required this.onChanged,
-    required this.videoController,
+    required this.background,
     this.slotStatus = const [],
     this.onSizeChanged,
     this.videoNativeSize,
-    this.onFullscreenExited,
   });
 
   @override
@@ -1617,7 +1542,7 @@ class _PolygonEditorState extends State<PolygonEditor> {
                           child: Stack(
                             fit: StackFit.expand,
                             children: [
-                              SizedBox.expand(child: VideoPlayer(widget.videoController)),
+                              SizedBox.expand(child: widget.background),
                               CustomPaint(
                                 painter: _PolygonPainter(
                                   polygons: _polygons,
@@ -1647,17 +1572,12 @@ class _PolygonEditorState extends State<PolygonEditor> {
                             polygons: _polygons,
                             currentPolygon: _currentPolygon,
                             slotStatus: widget.slotStatus,
-                            videoController: widget.videoController,
+                            background: widget.background,
                             onChanged: widget.onChanged,
                             onCurrentPolygonChanged: (p) => setState(() => _currentPolygon = p),
-                            onRenderSizeChanged: (s) {
-                              widget.onSizeChanged?.call(s);
-                            },
                           ),
                         );
                         setState(() {});
-                        widget.onChanged(_polygons);
-                        widget.onFullscreenExited?.call();
                       },
                       child: Container(
                         padding: const EdgeInsets.all(6),
@@ -1702,19 +1622,17 @@ class _FullscreenEditorDialog extends StatefulWidget {
   final List<List<Offset>> polygons;
   final List<Offset> currentPolygon;
   final List<bool> slotStatus;
-  final VideoPlayerController videoController;
+  final Widget background;
   final ValueChanged<List<List<Offset>>> onChanged;
   final ValueChanged<List<Offset>> onCurrentPolygonChanged;
-  final ValueChanged<Size> onRenderSizeChanged;
 
   const _FullscreenEditorDialog({
     required this.polygons,
     required this.currentPolygon,
     required this.slotStatus,
-    required this.videoController,
+    required this.background,
     required this.onChanged,
     required this.onCurrentPolygonChanged,
-    required this.onRenderSizeChanged,
   });
 
   @override
@@ -1773,40 +1691,29 @@ class _FullscreenEditorDialogState extends State<_FullscreenEditorDialog> {
         child: Column(
           children: [
             Expanded(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  WidgetsBinding.instance.addPostFrameCallback((_) {
-                    widget.onRenderSizeChanged(
-                      Size(constraints.maxWidth, constraints.maxHeight),
-                    );
-                  });
-                  return InteractiveViewer(
-                    transformationController: _transformController,
-                    minScale: 1.0,
-                    maxScale: 8.0,
-                    child: GestureDetector(
-                      onTapUp: _handleTap,
-                      child: SizedBox(
-                        width: constraints.maxWidth,
-                        height: constraints.maxHeight,
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            SizedBox.expand(child: VideoPlayer(widget.videoController)),
-                            CustomPaint(
-                              painter: _PolygonPainter(
-                                polygons: widget.polygons,
-                                currentPolygon: _currentPolygon,
-                                slotStatus: widget.slotStatus,
-                                sourceSize: null,
-                              ),
-                            ),
-                          ],
+              child: InteractiveViewer(
+                transformationController: _transformController,
+                minScale: 1.0,
+                maxScale: 8.0,
+                child: GestureDetector(
+                  onTapUp: _handleTap,
+                  child: SizedBox.expand(
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        SizedBox.expand(child: widget.background),
+                        CustomPaint(
+                          painter: _PolygonPainter(
+                            polygons: widget.polygons,
+                            currentPolygon: _currentPolygon,
+                            slotStatus: widget.slotStatus,
+                            sourceSize: null,
+                          ),
                         ),
-                      ),
+                      ],
                     ),
-                  );
-                },
+                  ),
+                ),
               ),
             ),
             Container(
@@ -2178,5 +2085,10 @@ class _PolygonPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _PolygonPainter oldDelegate) => true;
+  bool shouldRepaint(covariant _PolygonPainter oldDelegate) {
+    return oldDelegate.polygons != polygons ||
+        oldDelegate.currentPolygon != currentPolygon ||
+        oldDelegate.slotStatus != slotStatus ||
+        oldDelegate.sourceSize != sourceSize;
+  }
 }
