@@ -130,18 +130,15 @@ class ApiService {
 
   static dynamic _processResponse(http.Response response) {
     final body = response.body;
-
-    // Guard against HTML error pages (e.g. Render 502/504 gateway responses)
     dynamic data;
     try {
       data = body.isEmpty ? <String, dynamic>{} : jsonDecode(body);
     } catch (_) {
-      // Server returned non-JSON (HTML gateway error page)
       final code = response.statusCode;
       if (code == 502 || code == 503 || code == 504) {
-        throw Exception('Server gateway error ($code). The AI analysis may have timed out — try a shorter video.');
+        throw Exception('Server timed out ($code). Try a shorter video.');
       }
-      throw Exception('Server returned an unexpected response (status $code).');
+      throw Exception('Server returned non-JSON (status $code). Check Render logs.');
     }
 
     switch (response.statusCode) {
@@ -158,7 +155,7 @@ class ApiService {
       case 404:
         throw Exception('Resource not found');
       case 500:
-        throw Exception(_extractErrorMessage(data) ?? 'Server error (500) — check Render logs for details.');
+        throw Exception(_extractErrorMessage(data) ?? 'Server error (500)');
       default:
         throw Exception('Something went wrong (${response.statusCode})');
     }

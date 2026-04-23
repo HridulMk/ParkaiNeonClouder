@@ -332,125 +332,84 @@ class ParkingLotRunAnalysisEndpoint(APIView):
     permission_classes = []
 
     def post(self, request):
-        session_id = request.data.get('session_id')
-
-        if not session_id:
-            return Response(
-                {'success': False, 'error': 'session_id is required.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        print("\n🚀 RUN ANALYSIS START")
-        print("📌 Session ID:", session_id)
-
-        # ✅ Get Cloudinary video URL from request
-        video_url = request.data.get('video_url')
-
-        if not video_url:
-            return Response(
-                {'success': False, 'error': 'video_url is required.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # ✅ Local temp working directory
-        temp_dir = tempfile.mkdtemp()
-        input_video_path = os.path.join(temp_dir, "input.mp4")
-
+        import traceback
         try:
-            # ✅ Download video from Cloudinary
-            print("⬇️ Downloading video from Cloudinary...")
-            response = requests.get(video_url, stream=True)
-
-            if response.status_code != 200:
-                return Response(
-                    {'success': False, 'error': 'Failed to download video.'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            with open(input_video_path, 'wb') as f:
-                for chunk in response.iter_content(chunk_size=8192):
-                    f.write(chunk)
-
-            # ✅ Resolve polygons: prefer Cloudinary URL, fall back to local file
-            polygon_url = request.data.get('polygon_url')
-            polygons_path = os.path.join(
-                settings.MEDIA_ROOT,
-                'parking_uploads',
-                session_id,
-                'polygons.json'
-            )
-
-            if polygon_url:
-                print('⬇️ Downloading polygons from Cloudinary...')
-                poly_resp = requests.get(polygon_url)
-                if poly_resp.status_code == 200:
-                    os.makedirs(os.path.dirname(polygons_path), exist_ok=True)
-                    with open(polygons_path, 'wb') as f:
-                        f.write(poly_resp.content)
-                else:
-                    return Response(
-                        {'success': False, 'error': 'Failed to download polygons from Cloudinary.'},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-            elif not os.path.exists(polygons_path):
-                return Response(
-                    {'success': False, 'error': 'polygons.json not found.'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            # ✅ Run YOLO
-            from .process_video import process_video
-
-            print("⚙️ Running YOLO...")
-            result = process_video(
-                session_id=session_id,
-                input_path=input_video_path,
-                polygons_path=polygons_path,
-                output_dir=temp_dir
-            )
-
+            return self._run(request)
         except Exception as e:
-            import traceback
             traceback.print_exc()
             return Response(
-                {'success': False, 'error': str(e)},
+                {'success': False, 'error': f'Unhandled server error: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-        if not result.get("success"):
-            return Response(result, status=status.HTTP_400_BAD_REQUEST)
+    def _run(self, request):
+        session_id = request.data.get('session_id')
+        if not session_id:
+            return Response({'success': False, 'error': 'session_id is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        output_path = result.get("output_path")
+        video_url = request.data.get('video_url')
+        if not video_url:
+            return Response({'success': False, 'error': 'video_url is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
+        print("\n🚀 RUN ANALYSIS START — session:", session_id)
+
+        temp_dir = tempfile.mkdtemp()
+        input_video_path = os.path.join(temp_dir, 'input.mp4')
+
+        # Download video
+        print("⬇️ Downloading video...")
+        vid_resp = requests.get(video_url, stream=True, timeout=120)
+        if vid_resp.status_code != 200:
+            return Response({'success': False, 'error': f'Failed to download video (HTTP {vid_resp.status_code}).'}, status=status.HTTP_400_BAD_REQUEST)
+        with open(input_video_path, 'wb') as f:
+            for chunk in vid_resp.iter_content(chunk_size=8192):
+                f.write(chunk)
+        print(f"✅ Video downloaded: {os.path.getsize(input_video_path)} bytes")
+
+        # Resolve polygons
+        polygon_url = request.data.get('polygon_url')
+        polygons_path = os.path.join(settings.MEDIA_ROOT, 'parking_uploads', session_id, 'polygons.json')
+
+        if polygon_url:
+            print('⬇️ Downloading polygons...')
+            poly_resp = requests.get(polygon_url, timeout=30)
+            if poly_resp.status_code != 200:
+                return Response({'success': False, 'error': f'Failed to download polygons (HTTP {poly_resp.status_code}).'}, status=status.HTTP_400_BAD_REQUEST)
+            os.makedirs(os.path.dirname(polygons_path), exist_ok=True)
+            with open(polygons_path, 'wb') as f:
+                f.write(poly_resp.content)
+        elif not os.path.exists(polygons_path):
+            return Response({'success': False, 'error': 'polygons.json not found. Save polygons first.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Run YOLO
+        from .process_video import process_video
+        print("⚙️ Running YOLO...")
+        result = process_video(
+            session_id=session_id,
+            input_path=input_video_path,
+            polygons_path=polygons_path,
+            output_dir=temp_dir,
+        )
+        print("🔍 process_video result:", {k: v for k, v in result.items() if k != 'frame_data'})
+
+        if not result.get('success'):
+            return Response({'success': False, 'error': result.get('error', 'YOLO processing failed.')}, status=status.HTTP_400_BAD_REQUEST)
+
+        output_path = result.get('output_path')
         if not output_path or not os.path.exists(output_path):
-            return Response(
-                {'success': False, 'error': 'Output video not found.'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            return Response({'success': False, 'error': 'Output video file not found after processing.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        # ✅ Upload processed video to Cloudinary with H.264 transcoding
-        try:
-            print("☁️ Uploading processed video to Cloudinary...")
-            upload_result = cloudinary.uploader.upload_large(
-                output_path,
-                resource_type="video",
-                folder=f"parking_results/{session_id}",
-                eager=[{"format": "mp4", "video_codec": "h264"}],
-                eager_async=False,
-            )
-
-            # Prefer the eager H.264 URL; fall back to the raw upload URL
-            eager = upload_result.get("eager")
-            if eager and len(eager) > 0:
-                output_url = eager[0].get("secure_url")
-            else:
-                output_url = upload_result.get("secure_url")
-
-        except Exception as e:
-            return Response(
-                {'success': False, 'error': f'Cloudinary upload failed: {str(e)}'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+        # Upload to Cloudinary
+        print("☁️ Uploading to Cloudinary...")
+        upload_result = cloudinary.uploader.upload_large(
+            output_path,
+            resource_type='video',
+            folder=f'parking_results/{session_id}',
+            eager=[{'format': 'mp4', 'video_codec': 'h264'}],
+            eager_async=False,
+        )
+        eager = upload_result.get('eager')
+        output_url = (eager[0].get('secure_url') if eager else None) or upload_result.get('secure_url')
 
         return Response({
             'success': True,
