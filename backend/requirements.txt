@@ -28,6 +28,11 @@ opencv-python
 lap
 easyocr
 
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> 4b51445 (demo page updates)
 cloudinary
 django-cloudinary-storage
 dj-database-url

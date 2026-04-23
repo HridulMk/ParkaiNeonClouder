@@ -1,6 +1,7 @@
 import json
 import os
 import datetime
+import subprocess
 from collections import Counter
 from typing import Any, Dict, List
 
@@ -8,6 +9,7 @@ import cv2
 import numpy as np
 from ultralytics import YOLO
 import cvzone
+import imageio_ffmpeg
 
 
 # ── Polygon helpers ─────────────────────────────────────────────
@@ -107,14 +109,10 @@ def process_video(session_id: str, input_path: str, polygons_path: str, output_d
 
     polygons = _scale_polygons_to_frame(raw_polygons, frame_w, frame_h, display_w, display_h)
 
-    # ── Video Writer ── (avc1 = H.264, required for browser/Flutter web playback)
-    fourcc = cv2.VideoWriter_fourcc(*'avc1')
-    out = cv2.VideoWriter(output_path, fourcc, 20.0, (frame_w, frame_h))
-
-    # Fallback to mp4v if avc1 is not supported by this OpenCV build
-    if not out.isOpened():
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        out = cv2.VideoWriter(output_path, fourcc, 20.0, (frame_w, frame_h))
+    # ── Video Writer ── write temp AVI with XVID, re-encode to H.264 MP4 after
+    temp_path = output_path.replace('.mp4', '_tmp.avi')
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    out = cv2.VideoWriter(temp_path, fourcc, 20.0, (frame_w, frame_h))
 
     if not out.isOpened():
         return {"success": False, "error": "VideoWriter failed"}
@@ -172,6 +170,24 @@ def process_video(session_id: str, input_path: str, polygons_path: str, output_d
     # ── CLEANUP ──
     cap.release()
     out.release()
+
+    if not os.path.exists(temp_path) or os.path.getsize(temp_path) == 0:
+        return {"success": False, "error": "Temp video file was not created"}
+
+    # Re-encode to H.264 MP4 for browser compatibility
+    try:
+        ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
+        subprocess.run(
+            [ffmpeg_exe, '-y', '-i', temp_path,
+             '-vcodec', 'libx264', '-pix_fmt', 'yuv420p',
+             '-movflags', '+faststart', output_path],
+            check=True, capture_output=True
+        )
+    except Exception as e:
+        return {"success": False, "error": f"ffmpeg re-encode failed: {e}"}
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
 
     total_zones = len(polygons)
 
