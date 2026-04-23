@@ -107,17 +107,21 @@ def process_video(session_id: str, input_path: str, polygons_path: str, output_d
 
     polygons = _scale_polygons_to_frame(raw_polygons, frame_w, frame_h, display_w, display_h)
 
-    # ── Video Writer ── (avc1 = H.264, required for browser/Flutter web playback)
-    fourcc = cv2.VideoWriter_fourcc(*'avc1')
-    out = cv2.VideoWriter(output_path, fourcc, 20.0, (frame_w, frame_h))
+    # ── Video Writer ── try codecs in order; Cloudinary re-encodes to H.264 anyway
+    output_path_avi = output_path.replace('.mp4', '.avi')
+    out = None
+    for fourcc_str, path in [('mp4v', output_path), ('XVID', output_path_avi)]:
+        fourcc = cv2.VideoWriter_fourcc(*fourcc_str)
+        candidate = cv2.VideoWriter(path, fourcc, 20.0, (frame_w, frame_h))
+        if candidate.isOpened():
+            out = candidate
+            output_path = path
+            print(f"✅ VideoWriter opened with codec: {fourcc_str}")
+            break
+        candidate.release()
 
-    # Fallback to mp4v if avc1 is not supported by this OpenCV build
-    if not out.isOpened():
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        out = cv2.VideoWriter(output_path, fourcc, 20.0, (frame_w, frame_h))
-
-    if not out.isOpened():
-        return {"success": False, "error": "VideoWriter failed"}
+    if out is None or not out.isOpened():
+        return {"success": False, "error": "VideoWriter failed — no supported codec found"}
 
     frame_count = 0
     results = None

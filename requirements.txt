@@ -15,3 +15,7 @@ python-dotenv
 cloudinary
 django-cloudinary-storage
 dj-database-url
+opencv-python-headless
+ultralytics
+cvzone
+numpy

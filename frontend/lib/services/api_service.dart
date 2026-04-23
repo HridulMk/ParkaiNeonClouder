@@ -23,9 +23,9 @@ class ApiService {
   static const _refreshTokenKey = 'refresh_token';
 
   static String get baseUrl {
-    if (kIsWeb) return 'http://localhost:8000/api';
+    if (kIsWeb) return 'https://parkaineonclouder.onrender.com/api';
     // ignore: do_not_use_environment
-    return 'http://localhost:8000/api';
+    return 'https://parkaineonclouder.onrender.com/api';
   }
 
   static Future<Map<String, String>> _headers({bool auth = false}) async {
@@ -130,7 +130,19 @@ class ApiService {
 
   static dynamic _processResponse(http.Response response) {
     final body = response.body;
-    final dynamic data = body.isEmpty ? <String, dynamic>{} : jsonDecode(body);
+
+    // Guard against HTML error pages (e.g. Render 502/504 gateway responses)
+    dynamic data;
+    try {
+      data = body.isEmpty ? <String, dynamic>{} : jsonDecode(body);
+    } catch (_) {
+      // Server returned non-JSON (HTML gateway error page)
+      final code = response.statusCode;
+      if (code == 502 || code == 503 || code == 504) {
+        throw Exception('Server gateway error ($code). The AI analysis may have timed out — try a shorter video.');
+      }
+      throw Exception('Server returned an unexpected response (status $code).');
+    }
 
     switch (response.statusCode) {
       case 200:
@@ -146,7 +158,7 @@ class ApiService {
       case 404:
         throw Exception('Resource not found');
       case 500:
-        throw Exception(_extractErrorMessage(data) ?? 'Server error (500)');
+        throw Exception(_extractErrorMessage(data) ?? 'Server error (500) — check Render logs for details.');
       default:
         throw Exception('Something went wrong (${response.statusCode})');
     }

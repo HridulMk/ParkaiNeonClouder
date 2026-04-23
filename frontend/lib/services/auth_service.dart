@@ -6,38 +6,38 @@ import 'package:flutter/foundation.dart'; // for kIsWeb
 import 'dart:async'; // For TimeoutException
 import '../models/parking_space.dart';
 
-class AuthService {
-  // Base URL depends on platform
-  static String get baseUrl {
-    // default to localhost for desktop/web
-    if (kIsWeb) {
-      return 'http://localhost:8000/api';
-    }
-    if (Platform.isAndroid) {
-      return 'http://10.0.2.2:8000/api';
-    }
-    if (Platform.isIOS) {
-      return 'http://localhost:8000/api';
-    }
-    // Windows, Mac, Linux
-    return 'http://localhost:8000/api';
-  }
 // class AuthService {
 //   // Base URL depends on platform
 //   static String get baseUrl {
 //     // default to localhost for desktop/web
 //     if (kIsWeb) {
-//       return 'https://parkaimap-1.onrender.com/api';
+//       return 'http://localhost:8000/api';
 //     }
 //     if (Platform.isAndroid) {
-//       return 'https://parkaimap-1.onrender.com/api';
+//       return 'http://10.0.2.2:8000/api';
 //     }
 //     if (Platform.isIOS) {
-//       return 'https://parkaimap-1.onrender.com/api';
+//       return 'http://localhost:8000/api';
 //     }
 //     // Windows, Mac, Linux
-//     return 'https://parkaimap-1.onrender.com/api';
-//   }
+//     return 'http://localhost:8000/api';
+  // }
+class AuthService {
+  // Base URL depends on platform
+  static String get baseUrl {
+    // default to localhost for desktop/web
+    if (kIsWeb) {
+      return 'https://parkaineonclouder.onrender.com/api';
+    }
+    if (Platform.isAndroid) {
+      return 'https://parkaineonclouder.onrender.com/api';
+    }
+    if (Platform.isIOS) {
+      return 'https://parkaineonclouder.onrender.com/api';
+    }
+    // Windows, Mac, Linux
+    return 'https://parkaineonclouder.onrender.com/api';
+  }
 
   static const _storage = FlutterSecureStorage();
   static const _tokenKey = 'auth_token';
