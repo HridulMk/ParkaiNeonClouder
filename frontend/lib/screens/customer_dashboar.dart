@@ -5,8 +5,10 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../services/auth_service.dart';
 import '../services/parking_service.dart';
+import '../services/notification_service.dart';
 import '../models/parking_slot.dart';
 import 'welcome.dart';
+import 'notifications_screen.dart';
 
 class CustomerDashboardScreen extends StatefulWidget {
   const CustomerDashboardScreen({super.key});
@@ -22,6 +24,7 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
   void initState() {
     super.initState();
     _future = _load();
+    NotificationService().initialize();
   }
 
   Future<_CustomerData> _load() async {
@@ -155,6 +158,38 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
                         ),
                       ),
                       IconButton(onPressed: _reload, icon: const Icon(Icons.refresh)),
+                      Stack(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.notifications_outlined, color: Color(0xFF0D9488)),
+                            onPressed: () {
+                              Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NotificationsScreen()));
+                            },
+                          ),
+                          Positioned(
+                            right: 8,
+                            top: 8,
+                            child: AnimatedBuilder(
+                              animation: NotificationService(),
+                              builder: (context, _) {
+                                final count = NotificationService().unreadCount;
+                                if (count == 0) return const SizedBox.shrink();
+                                return Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.red,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Text(
+                                    count > 9 ? '9+' : '$count',
+                                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
                       IconButton(
                         icon: const Icon(Icons.logout, color: Colors.red),
                         onPressed: () async {

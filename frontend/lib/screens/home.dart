@@ -7,6 +7,7 @@ import 'dart:math' as math;
 import 'dart:ui';
 
 import '../services/auth_service.dart';
+import '../services/notification_service.dart';
 import '../widgets/app_floating_nav.dart';
 import 'dashboard.dart';
 import 'customer_dashboar.dart';
@@ -14,6 +15,7 @@ import 'my_bookings.dart';
 import 'parking_list.dart';
 import 'welcome.dart';
 import 'demo_working.dart';
+import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -42,6 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
         return const ProfileScreen();
     }
   }
+
 
   @override
   void initState() {
@@ -873,43 +876,4 @@ class _ModernBgPainter extends CustomPainter {
   }
 }
 
-class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
 
-  Future<void> _logout(BuildContext context) async {
-    await AuthService.logout();
-    if (!context.mounted) return;
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (context) => const WelcomeScreen()),
-      (route) => false,
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.person, size: 80, color: Colors.grey),
-          const SizedBox(height: 20),
-          const Text(
-            'Profile',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 40),
-          ElevatedButton.icon(
-            onPressed: () => _logout(context),
-            icon: const Icon(Icons.logout),
-            label: const Text('Logout'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

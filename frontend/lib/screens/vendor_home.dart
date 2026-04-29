@@ -11,6 +11,8 @@ import 'parking_list.dart';
 import 'add_space_screen.dart';
 import 'manage_pricing_screen.dart';
 import 'vendor_reports_screen.dart';
+import '../services/notification_service.dart';
+import 'notifications_screen.dart';
 
 
 class VendorHomeScreen extends StatefulWidget {
@@ -30,6 +32,7 @@ class _VendorHomeScreenState extends State<VendorHomeScreen> {
     super.initState();
     _checkConnection();
     _connectionTimer = Timer.periodic(const Duration(seconds: 30), (_) => _checkConnection());
+    NotificationService().initialize();
   }
 
   @override
@@ -113,12 +116,47 @@ class _VendorHomeContent extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: Colors.cyanAccent.withValues(alpha: 0.3)),
               ),
-              child: const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
-                  Text('Hello, Vendor!', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-                  SizedBox(height: 8),
-                  Text('Manage your parking spaces', style: TextStyle(color: Colors.white60, fontSize: 14)),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text('Hello, Vendor!', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                        SizedBox(height: 8),
+                        Text('Manage your parking spaces', style: TextStyle(color: Colors.white60, fontSize: 14)),
+                      ],
+                    ),
+                  ),
+                  Stack(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.notifications_outlined, color: Colors.cyanAccent),
+                        onPressed: () {
+                          Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NotificationsScreen()));
+                        },
+                      ),
+                      Positioned(
+                        right: 8,
+                        top: 8,
+                        child: AnimatedBuilder(
+                          animation: NotificationService(),
+                          builder: (context, _) {
+                            final count = NotificationService().unreadCount;
+                            if (count == 0) return const SizedBox.shrink();
+                            return Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                              child: Text(
+                                count > 9 ? '9+' : '$count',
+                                style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),

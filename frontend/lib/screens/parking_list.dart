@@ -12,6 +12,8 @@ import 'live_map_screen.dart';
 import 'payment.dart';
 
 class ParkingListScreen extends StatefulWidget {
+  const ParkingListScreen({super.key});
+
   @override
   State<ParkingListScreen> createState() => _ParkingListScreenState();
 }
@@ -22,7 +24,7 @@ class _ParkingListScreenState extends State<ParkingListScreen> {
   List<String> _uniqueLocations = [];
   bool _isLoading = true;
   String? _errorMessage;
-  TextEditingController _searchController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
   String? _selectedLocation;
 
   @override
@@ -191,16 +193,16 @@ class _ParkingListScreenState extends State<ParkingListScreen> {
                               child: Row(
                                 children: [
                                   Expanded(
-                                    child: DropdownButton<String>(
+                                    child: DropdownButton<String?>(
                                       value: _selectedLocation,
                                       hint: const Text('Filter by Location'),
                                       isExpanded: true,
                                       items: [
-                                        const DropdownMenuItem<String>(
+                                        const DropdownMenuItem<String?>(
                                           value: null,
                                           child: Text('All Locations'),
                                         ),
-                                        ..._uniqueLocations.map((loc) => DropdownMenuItem<String>(
+                                        ..._uniqueLocations.map((loc) => DropdownMenuItem<String?>(
                                               value: loc,
                                               child: Text(loc),
                                             )),
@@ -386,7 +388,7 @@ class _SpaceSlotsBottomSheetState extends State<_SpaceSlotsBottomSheet> {
 
   Future<void> _reserveSlot(ParkingSlot slot) async {
     // Show vehicle information dialog
-    final vehicleInfo = await showDialog<Map<String, String>>(
+    final vehicleInfo = await showDialog<Map<String, dynamic>>(
       context: context,
       barrierDismissible: false,
       builder: (context) => const _VehicleInfoDialog(),
@@ -397,14 +399,20 @@ class _SpaceSlotsBottomSheetState extends State<_SpaceSlotsBottomSheet> {
     final result = await ParkingService.reserveSlot(
       spaceId: _spaceId, 
       slotId: slot.id,
-      vehicleNumber: vehicleInfo['number']!,
-      vehicleType: vehicleInfo['type']!,
+      vehicleNumber: vehicleInfo['number'] as String,
+      vehicleType: vehicleInfo['type'] as String,
+      expectedCheckinTime: vehicleInfo['expected_checkin_time'] as String?,
+      estimatedDurationMins: vehicleInfo['estimated_duration_mins'] as int?,
     );
     
     if (!mounted) return;
 
     if (result['success'] == true) {
       final reservation = result['reservation'] as Map<String, dynamic>;
+      final expectedCheckInValue =
+          vehicleInfo['expected_checkin_time'] as String?;
+      final estimatedDurationValue =
+          vehicleInfo['estimated_duration_mins'] as int?;
       Navigator.pop(context);
       Navigator.of(context).push(
         MaterialPageRoute(
@@ -413,6 +421,10 @@ class _SpaceSlotsBottomSheetState extends State<_SpaceSlotsBottomSheet> {
             slotId: slot.slotId,
             reservationId: reservation['id'] as int,
             amount: double.parse((reservation['booking_fee'] ?? reservation['amount'] ?? 0).toString()),
+            expectedCheckInTime: expectedCheckInValue != null
+                ? DateTime.tryParse(expectedCheckInValue)
+                : null,
+            estimatedDurationMins: estimatedDurationValue,
           ),
         ),
       );
@@ -588,8 +600,48 @@ class _VehicleInfoDialogState extends State<_VehicleInfoDialog> {
   final _formKey = GlobalKey<FormState>();
   final _vehicleNumberController = TextEditingController();
   String? _selectedVehicleType;
+  DateTime? _expectedCheckInTime;
+  int? _estimatedDurationMins;
 
   final List<String> _vehicleTypes = ['SUV', 'Pickup', 'Sedan', 'Hatchback'];
+  final List<int> _durationOptions = [30, 60, 90, 120, 180, 240, 360, 480, 720, 1440]; // minutes
+
+  String _formatDuration(int mins) {
+    if (mins < 60) return '$mins mins';
+    final hours = mins ~/ 60;
+    final remainingMins = mins % 60;
+    if (remainingMins == 0) return '$hours hour${hours > 1 ? 's' : ''}';
+    return '$hours hr ${remainingMins} mins';
+  }
+
+  Future<void> _selectCheckInTime() async {
+    final now = DateTime.now();
+    final date = await showDatePicker(
+      context: context,
+      initialDate: _expectedCheckInTime ?? now,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 30)),
+    );
+    
+    if (date == null || !mounted) return;
+    
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(_expectedCheckInTime ?? now),
+    );
+    
+    if (time == null || !mounted) return;
+    
+    setState(() {
+      _expectedCheckInTime = DateTime(
+        date.year,
+        date.month,
+        date.day,
+        time.hour,
+        time.minute,
+      );
+    });
+  }
 
   @override
   void dispose() {
@@ -600,53 +652,136 @@ class _VehicleInfoDialogState extends State<_VehicleInfoDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Vehicle Information'),
+      title: const Text('Vehicle & Booking Information'),
       content: Form(
         key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextFormField(
-              controller: _vehicleNumberController,
-              decoration: const InputDecoration(
-                labelText: 'Vehicle Number',
-                hintText: 'e.g., ABC-1234',
-                border: OutlineInputBorder(),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Vehicle Number
+              TextFormField(
+                controller: _vehicleNumberController,
+                decoration: const InputDecoration(
+                  labelText: 'Vehicle Number',
+                  hintText: 'e.g., ABC-1234',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Vehicle number is required';
+                  }
+                  return null;
+                },
+                textCapitalization: TextCapitalization.characters,
               ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Vehicle number is required';
-                }
-                return null;
-              },
-              textCapitalization: TextCapitalization.characters,
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              initialValue: _selectedVehicleType,
-              decoration: const InputDecoration(
-                labelText: 'Vehicle Type',
-                border: OutlineInputBorder(),
+              const SizedBox(height: 16),
+              
+              // Vehicle Type
+              DropdownButtonFormField<String>(
+                decoration: const InputDecoration(
+                  labelText: 'Vehicle Type',
+                  border: OutlineInputBorder(),
+                ),
+                items: _vehicleTypes.map((type) {
+                  return DropdownMenuItem<String>(
+                    value: type.toLowerCase(),
+                    child: Text(type),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedVehicleType = value;
+                  });
+                },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please select a vehicle type';
+                  }
+                  return null;
+                },
               ),
-              items: _vehicleTypes.map((type) {
-                return DropdownMenuItem<String>(
-                  value: type.toLowerCase(),
-                  child: Text(type),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedVehicleType = value;
-                });
-              },
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please select a vehicle type';
-                }
-                return null;
-              },
-            ),
-          ],
+              const SizedBox(height: 20),
+              const Divider(),
+              const SizedBox(height: 12),
+              
+              // Expected Check-in Time Section
+              const Text(
+                'Booking Preferences (Optional)',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 12),
+              
+              // Expected Check-in Time
+              InkWell(
+                onTap: _selectCheckInTime,
+                child: InputDecorator(
+                  decoration: const InputDecoration(
+                    labelText: 'Expected Check-in Time',
+                    border: OutlineInputBorder(),
+                    suffixIcon: Icon(Icons.access_time),
+                  ),
+                  child: Text(
+                    _expectedCheckInTime != null
+                        ? '${_expectedCheckInTime!.day}/${_expectedCheckInTime!.month}/${_expectedCheckInTime!.year} ${_expectedCheckInTime!.hour.toString().padLeft(2, '0')}:${_expectedCheckInTime!.minute.toString().padLeft(2, '0')}'
+                        : 'Tap to select time',
+                    style: TextStyle(
+                      color: _expectedCheckInTime != null ? null : Colors.grey,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              
+              // Estimated Duration - Slider
+              const Text(
+                'Estimated Parking Duration',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(Icons.timer, size: 20, color: Colors.grey),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Slider(
+                      value: (_estimatedDurationMins ?? 60).toDouble(),
+                      min: 15,
+                      max: 720,
+                      divisions: 47,
+                      label: _formatDuration(_estimatedDurationMins ?? 60),
+                      onChanged: (value) {
+                        setState(() {
+                          _estimatedDurationMins = value.round();
+                        });
+                      },
+                    ),
+                  ),
+                SizedBox(
+                  width: 70,
+                  child: Text(
+                    _formatDuration(_estimatedDurationMins ?? 60),
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.end,
+                  ),
+                ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Slide to set your parking duration',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
       actions: [
@@ -667,6 +802,8 @@ class _VehicleInfoDialogState extends State<_VehicleInfoDialog> {
       Navigator.of(context).pop({
         'number': _vehicleNumberController.text.trim().toUpperCase(),
         'type': _selectedVehicleType!,
+        'expected_checkin_time': _expectedCheckInTime?.toIso8601String(),
+        'estimated_duration_mins': _estimatedDurationMins ?? 60,
       });
     }
   }

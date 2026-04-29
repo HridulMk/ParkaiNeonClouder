@@ -96,6 +96,7 @@ class Reservation(models.Model):
     STATUS_CHECKED_IN = 'checked_in'
     STATUS_CHECKED_OUT = 'checked_out'
     STATUS_COMPLETED = 'completed'
+    STATUS_CANCELLED = 'cancelled'
 
     STATUS_CHOICES = [
         (STATUS_PENDING_BOOKING_PAYMENT, 'Pending Booking Payment'),
@@ -103,6 +104,7 @@ class Reservation(models.Model):
         (STATUS_CHECKED_IN, 'Checked In'),
         (STATUS_CHECKED_OUT, 'Checked Out'),
         (STATUS_COMPLETED, 'Completed'),
+        (STATUS_CANCELLED, 'Cancelled'),
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -114,12 +116,15 @@ class Reservation(models.Model):
     is_paid = models.BooleanField(default=False)
     booking_fee = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('20.00'))
     booking_fee_paid = models.BooleanField(default=False)
+    expected_checkin_time = models.DateTimeField(null=True, blank=True, help_text='Expected time of arrival')
+    estimated_duration_mins = models.PositiveIntegerField(null=True, blank=True, help_text='User estimated parking duration in minutes')
     checkin_time = models.DateTimeField(null=True, blank=True)
     checkout_time = models.DateTimeField(null=True, blank=True)
     final_fee = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
     final_fee_paid = models.BooleanField(default=False)
     hourly_rate = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('30.00'))
     status = models.CharField(max_length=40, choices=STATUS_CHOICES, default=STATUS_PENDING_BOOKING_PAYMENT)
+    cancellation_reason = models.CharField(max_length=255, blank=True, help_text='Reason for cancellation')
     qr_code = models.TextField(blank=True)
     qr_image = models.ImageField(upload_to=_qr_image_upload_path, blank=True, null=True)
     vehicle_number = models.CharField(max_length=20, blank=True, help_text='Vehicle registration number')
@@ -166,6 +171,41 @@ class PaymentRecord(models.Model):
         return f"{self.payment_type} | {self.user_full_name} | Rs {self.amount} | {self.paid_at:%Y-%m-%d %H:%M}"
 
 
+class Wallet(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='wallet')
+    balance = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.username} — Rs {self.balance}"
+
+
+class WalletTransaction(models.Model):
+    TYPE_TOPUP = 'topup'
+    TYPE_DEBIT = 'debit'
+    TYPE_REFUND = 'refund'
+    TYPE_CHOICES = [
+        (TYPE_TOPUP, 'Top Up'),
+        (TYPE_DEBIT, 'Debit'),
+        (TYPE_REFUND, 'Refund'),
+    ]
+
+    wallet = models.ForeignKey(Wallet, on_delete=models.CASCADE, related_name='transactions')
+    transaction_type = models.CharField(max_length=10, choices=TYPE_CHOICES)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    description = models.CharField(max_length=200, blank=True)
+    reservation = models.ForeignKey(
+        'Reservation', on_delete=models.SET_NULL, null=True, blank=True, related_name='wallet_transactions'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.transaction_type} Rs {self.amount} — {self.wallet.user.username}"
+
+
 class Gate(models.Model):
     name = models.CharField(max_length=100)
     space = models.ForeignKey(ParkingSpace, on_delete=models.CASCADE)
@@ -208,3 +248,37 @@ class VehicleLog(models.Model):
             self.duration_minutes = int(delta.total_seconds() / 60)
         super().save(*args, **kwargs)
 
+
+class Notification(models.Model):
+    NOTIFICATION_TYPES = [
+        ('booking', 'Booking'),
+        ('wallet', 'Wallet'),
+        ('space', 'Space'),
+        ('system', 'System'),
+        ('cancellation', 'Cancellation'),
+    ]
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    title = models.CharField(max_length=255)
+    message = models.TextField()
+    notification_type = models.CharField(max_length=20, choices=NOTIFICATION_TYPES, default='system')
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.title}"
+
+
+class SystemSetting(models.Model):
+    commission_percentage = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal('10.00'),
+        help_text='Platform commission percentage charged on parking revenue.'
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Commission {self.commission_percentage}%"

@@ -17,3 +17,19 @@ def notify_slot_update(space_id, reason='updated'):
             'timestamp': timezone.now().isoformat(),
         },
     )
+
+def notify_user(user_id, title, message, notification_type='system'):
+    channel_layer = get_channel_layer()
+    if not channel_layer:
+        return
+
+    async_to_sync(channel_layer.group_send)(
+        f'user_notifications_{user_id}',
+        {
+            'type': 'notification_message',
+            'title': title,
+            'message': message,
+            'notification_type': notification_type,
+            'timestamp': timezone.now().isoformat(),
+        },
+    )

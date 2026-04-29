@@ -2,12 +2,14 @@ from decimal import Decimal
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from .models import CCTVFeed, Gate, ParkingSlot, ParkingSpace, PaymentRecord, Reservation, User, VehicleLog
+from .models import CCTVFeed, Gate, ParkingSlot, ParkingSpace, PaymentRecord, Reservation, SystemSetting, User, VehicleLog, Wallet, WalletTransaction, Notification
 
 
 class UserSerializer(serializers.ModelSerializer):
     assigned_parking_space_id = serializers.IntegerField(source='assigned_parking_space.id', read_only=True)
     assigned_parking_space_name = serializers.CharField(source='assigned_parking_space.name', read_only=True)
+    full_name = serializers.SerializerMethodField()
+    vendor_documents_complete = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -15,16 +17,104 @@ class UserSerializer(serializers.ModelSerializer):
             'id',
             'username',
             'email',
+            'full_name',
             'first_name',
             'last_name',
             'phone',
             'user_type',
+            'address',
+            'company_name',
+            'land_owner_name',
+            'land_tax_receipt',
+            'license_document',
+            'government_id',
+            'vendor_documents_complete',
             'assigned_parking_space_id',
             'assigned_parking_space_name',
             'is_active',
             'is_staff',
         ]
         read_only_fields = ['id', 'assigned_parking_space_id', 'assigned_parking_space_name']
+
+    def get_full_name(self, obj):
+        return f"{obj.first_name} {obj.last_name}".strip() or obj.username
+
+    def get_vendor_documents_complete(self, obj):
+        if obj.user_type != 'vendor':
+            return None
+        return bool(obj.land_tax_receipt and obj.license_document and obj.government_id)
+
+
+class AdminUserSerializer(serializers.ModelSerializer):
+    full_name = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    password = serializers.CharField(write_only=True, required=False, min_length=6, allow_blank=True)
+    assigned_parking_space = serializers.PrimaryKeyRelatedField(
+        queryset=ParkingSpace.objects.all(),
+        required=False,
+        allow_null=True,
+    )
+    assigned_parking_space_id = serializers.IntegerField(source='assigned_parking_space.id', read_only=True)
+    assigned_parking_space_name = serializers.CharField(source='assigned_parking_space.name', read_only=True)
+    display_name = serializers.SerializerMethodField()
+    vendor_documents_complete = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = [
+            'id', 'username', 'email', 'full_name', 'display_name', 'first_name', 'last_name',
+            'phone', 'user_type', 'password', 'is_active', 'is_staff',
+            'assigned_parking_space', 'assigned_parking_space_id', 'assigned_parking_space_name',
+            'address', 'company_name', 'land_owner_name',
+            'land_tax_receipt', 'license_document', 'government_id', 'vendor_documents_complete',
+        ]
+        read_only_fields = ['id', 'assigned_parking_space_id', 'assigned_parking_space_name']
+
+    def get_display_name(self, obj):
+        return f"{obj.first_name} {obj.last_name}".strip() or obj.username
+
+    def get_vendor_documents_complete(self, obj):
+        if obj.user_type != 'vendor':
+            return None
+        return bool(obj.land_tax_receipt and obj.license_document and obj.government_id)
+
+    def validate(self, attrs):
+        user_type = attrs.get('user_type', getattr(self.instance, 'user_type', 'customer'))
+        assigned_space = attrs.get('assigned_parking_space', getattr(self.instance, 'assigned_parking_space', None))
+        if user_type == 'security' and assigned_space is None:
+            raise serializers.ValidationError({'assigned_parking_space': 'Security personnel must be assigned to a parking space.'})
+        if user_type != 'security' and attrs.get('assigned_parking_space') is not None:
+            raise serializers.ValidationError({'assigned_parking_space': 'Only security personnel can be assigned to parking spaces.'})
+        return attrs
+
+    def _apply_full_name(self, instance, full_name):
+        if full_name is None:
+            return
+        name_parts = full_name.strip().split(' ', 1)
+        instance.first_name = name_parts[0] if name_parts and name_parts[0] else ''
+        instance.last_name = name_parts[1] if len(name_parts) > 1 else ''
+
+    def create(self, validated_data):
+        full_name = validated_data.pop('full_name', '')
+        password = validated_data.pop('password', None)
+        user = User(**validated_data)
+        self._apply_full_name(user, full_name)
+        if password:
+            user.set_password(password)
+        else:
+            user.set_unusable_password()
+        user.save()
+        return user
+
+    def update(self, instance, validated_data):
+        full_name = validated_data.pop('full_name', None)
+        password = validated_data.pop('password', None)
+        self._apply_full_name(instance, full_name)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        if password:
+            instance.set_password(password)
+        instance.save()
+        return instance
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
@@ -156,6 +246,8 @@ class ParkingSpaceCreateSerializer(serializers.ModelSerializer):
             'location',
             'open_time',
             'close_time',
+            'hourly_rate',
+            'booking_fee',
             'google_map_link',
             'parking_image',
             'cctv_video',
@@ -175,6 +267,12 @@ class ParkingSpaceCreateSerializer(serializers.ModelSerializer):
         return attrs
 
 
+class SystemSettingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SystemSetting
+        fields = ['commission_percentage', 'updated_at']
+
+
 class ParkingSlotSerializer(serializers.ModelSerializer):
     space_name = serializers.CharField(source='space.name', read_only=True)
     is_reserved = serializers.SerializerMethodField()
@@ -184,6 +282,10 @@ class ParkingSlotSerializer(serializers.ModelSerializer):
         fields = ['id', 'space', 'space_name', 'slot_id', 'label', 'is_occupied', 'is_reserved', 'is_active', 'created_at']
 
     def get_is_reserved(self, obj):
+        annotated_value = getattr(obj, 'reserved_active', None)
+        if annotated_value is not None:
+            return bool(annotated_value)
+
         return Reservation.objects.filter(
             slot=obj,
             status__in=[
@@ -327,4 +429,48 @@ class VehicleLogSerializer(serializers.ModelSerializer):
         return None
 
 
+class WalletSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+    transactions = serializers.SerializerMethodField()
+
+    def get_transactions(self, obj):
+        return WalletTransactionSerializer(obj.transactions.all(), many=True).data
+
+    class Meta:
+        model = Wallet
+        fields = ['id', 'user', 'username', 'balance', 'updated_at', 'transactions']
+
+
+class WalletTransactionSerializer(serializers.ModelSerializer):
+    wallet_username = serializers.CharField(source='wallet.user.username', read_only=True)
+
+    class Meta:
+        model = WalletTransaction
+        fields = [
+            'id',
+            'wallet',
+            'wallet_username',
+            'transaction_type',
+            'amount',
+            'description',
+            'reservation',
+            'created_at',
+        ]
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+
+    class Meta:
+        model = Notification
+        fields = [
+            'id',
+            'user',
+            'username',
+            'title',
+            'message',
+            'notification_type',
+            'is_read',
+            'created_at',
+        ]
 

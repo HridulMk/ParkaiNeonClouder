@@ -14,9 +14,12 @@ router.register(r'gates', views.GateViewSet)
 router.register(r'cctv', views.CCTVFeedViewSet)
 router.register(r'vehicle-logs', views.VehicleLogViewSet)
 router.register(r'payments', views.PaymentRecordViewSet, basename='payments')
+router.register(r'notifications', views.NotificationViewSet, basename='notifications')
+router.register(r'wallet', views.WalletViewSet, basename='wallet')
 
 urlpatterns = [
     path('', include(router.urls)),
+
 
     # re_path(r'^spaces/create-space/?$', views.ParkingSpaceCreateEndpoint.as_view(), name='spaces_create_space_explicit'),
     # re_path(r'^spaces/(?P<space_id>\d+)/slots/(?P<slot_id>\d+)/book/?$', views.CustomerSlotBookingEndpoint.as_view(), name='customer_slot_book'),
@@ -72,6 +75,12 @@ urlpatterns = [
     path('auth/register/', views.register_user, name='register_user'),
     path('auth/parking-spaces-for-security/', views.get_parking_spaces_for_security, name='parking_spaces_for_security'),
     path('auth/admin/metrics/', views.admin_metrics, name='admin_metrics'),
+    path('auth/admin/settings/', views.admin_settings, name='admin_settings'),
+    path('dashboard/summary/', views.dashboard_summary, name='dashboard_summary'),
+    path('analytics/overview/', views.analytics_overview, name='analytics_overview'),
+    path('analytics/app-revenue/', views.analytics_app_revenue, name='analytics_app_revenue'),
+    path('analytics/vendors/<int:vendor_id>/revenue/', views.analytics_vendor_revenue, name='analytics_vendor_revenue'),
+    path('analytics/customers/<int:customer_id>/spend/', views.analytics_customer_spend, name='analytics_customer_spend'),
 
     path('vehicle/process-image/', views.VehicleImageProcessEndpoint.as_view(), name='vehicle_process_image'),
 ]

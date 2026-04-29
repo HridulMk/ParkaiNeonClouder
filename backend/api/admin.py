@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User, ParkingSpace, ParkingSlot, Reservation, Gate, CCTVFeed
+from .models import User, ParkingSpace, ParkingSlot, Reservation, Gate, CCTVFeed, SystemSetting
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
@@ -81,3 +81,8 @@ class GateAdmin(admin.ModelAdmin):
 @admin.register(CCTVFeed)
 class CCTVFeedAdmin(admin.ModelAdmin):
     list_display = ['name', 'space', 'camera_id', 'is_active']
+
+
+@admin.register(SystemSetting)
+class SystemSettingAdmin(admin.ModelAdmin):
+    list_display = ['commission_percentage', 'updated_at']

@@ -47,11 +47,15 @@ class ParkingService {
     required int slotId,
     required String vehicleNumber,
     required String vehicleType,
+    required String? expectedCheckinTime,
+    required int? estimatedDurationMins,
   }) async {
     try {
       final response = await ApiService.post('spaces/$spaceId/slots/$slotId/book/', auth: true, body: {
         'vehicle_number': vehicleNumber,
         'vehicle_type': vehicleType,
+        if (expectedCheckinTime != null) 'expected_checkin_time': expectedCheckinTime,
+        if (estimatedDurationMins != null) 'estimated_duration_mins': estimatedDurationMins.toString(),
       });
       return {'success': true, 'reservation': response};
     } catch (e) {
@@ -144,12 +148,49 @@ class ParkingService {
     }
   }
 
-  static Future<bool> cancelReservation(int reservationId) async {
+  static Future<Map<String, dynamic>> getWallet() async {
     try {
-      await ApiService.delete('reservations/$reservationId/');
-      return true;
-    } catch (_) {
-      return false;
+      final response = await ApiService.get('wallet/me/', auth: true);
+      return {'success': true, 'wallet': response};
+    } catch (e) {
+      return {'success': false, 'error': e.toString().replaceFirst('Exception: ', '')};
+    }
+  }
+
+  static Future<Map<String, dynamic>> topUpWallet(double amount) async {
+    try {
+      final response = await ApiService.post('wallet/topup/', auth: true, body: {'amount': amount.toStringAsFixed(2)});
+      return {'success': true, 'wallet': response};
+    } catch (e) {
+      return {'success': false, 'error': e.toString().replaceFirst('Exception: ', '')};
+    }
+  }
+
+  static Future<Map<String, dynamic>> payBookingWithWallet(int reservationId) async {
+    try {
+      final response = await ApiService.post('wallet/pay-booking/$reservationId/', auth: true);
+      return {'success': true, 'reservation': response};
+    } catch (e) {
+      return {'success': false, 'error': e.toString().replaceFirst('Exception: ', '')};
+    }
+  }
+
+  static Future<Map<String, dynamic>> payFinalWithWallet(int reservationId) async {
+    try {
+      final response = await ApiService.post('wallet/pay-final/$reservationId/', auth: true);
+      return {'success': true, 'reservation': response};
+    } catch (e) {
+      return {'success': false, 'error': e.toString().replaceFirst('Exception: ', '')};
+    }
+  }
+
+  static Future<Map<String, dynamic>> cancelReservation(int reservationId, {String? cancellationReason}) async {
+    try {
+      final body = cancellationReason != null ? {'cancellation_reason': cancellationReason} : <String, dynamic>{};
+      final response = await ApiService.post('reservations/$reservationId/cancel/', auth: true, body: body);
+      return {'success': true, 'reservation': response};
+    } catch (e) {
+      return {'success': false, 'error': e.toString().replaceFirst('Exception: ', '')};
     }
   }
 
