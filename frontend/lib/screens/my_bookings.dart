@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../services/parking_service.dart';
 
 class MyBookingsScreen extends StatefulWidget {
@@ -15,8 +14,15 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
   late TabController _tabController;
 
   static const _tabs = ['Live', 'Completed', 'Cancelled'];
+
   static const _statusMap = {
-    'Live': ['pending_booking_payment', 'reserved', 'checked_in', 'confirmed', 'pending'],
+    'Live': [
+      'pending_booking_payment',
+      'reserved',
+      'checked_in',
+      'confirmed',
+      'pending'
+    ],
     'Completed': ['completed', 'checked_out'],
     'Cancelled': ['cancelled'],
   };
@@ -34,7 +40,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
     super.dispose();
   }
 
-  void _reload() {
+  Future<void> _reload() async {
     setState(() {
       _reservationsFuture = ParkingService.getReservations();
     });
@@ -43,17 +49,32 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
   List<dynamic> _filter(List<dynamic> rows, String tab) {
     final statuses = _statusMap[tab]!;
     return rows.where((r) {
-
-      final s = ((r as Map<String, dynamic>)['status'] ?? '').toString().toLowerCase();
+      final s = ((r as Map<String, dynamic>)['status'] ?? '')
+          .toString()
+          .toLowerCase();
       return statuses.contains(s);
     }).toList();
+  }
+
+  String formatStatus(String s) {
+    return s.replaceAll('_', ' ').toUpperCase();
+  }
+
+  String _formatTime(dynamic time) {
+    if (time == null) return '-';
+    try {
+      final dt = DateTime.parse(time.toString());
+      return '${dt.day}/${dt.month}/${dt.year} '
+          '${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
+    } catch (e) {
+      return time.toString();
+    }
   }
 
   Future<void> _cancelBooking(Map<String, dynamic> r) async {
     final id = r['id'];
     if (id == null) return;
 
-    // Show reason selection dialog
     final reason = await showDialog<String>(
       context: context,
       builder: (_) => AlertDialog(
@@ -64,25 +85,37 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
           children: [
             Text('Cancel reservation ${r['reservation_id'] ?? id}?'),
             const SizedBox(height: 16),
-            const Text('Select a reason:', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text('Select a reason:',
+                style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            ...['Changed my mind', 'Emergency', 'Wrong slot selected', 'Other'].map(
-              (r) => ListTile(
-                title: Text(r),
-                onTap: () => Navigator.pop(context, r),
+            ...[
+              'Changed my mind',
+              'Emergency',
+              'Wrong slot selected',
+              'Other'
+            ].map(
+              (reason) => ListTile(
+                title: Text(reason),
+                onTap: () => Navigator.pop(context, reason),
               ),
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('No')),
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('No')),
         ],
       ),
     );
 
     if (reason == null) return;
 
-    final result = await ParkingService.cancelReservation(id as int, cancellationReason: reason);
+    final result = await ParkingService.cancelReservation(
+      id as int,
+      cancellationReason: reason,
+    );
+
     if (!mounted) return;
 
     if (result['success'] == true) {
@@ -92,47 +125,76 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
       _reload();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed: ${result['error'] ?? 'Unknown error'}')),
+        SnackBar(content: Text(result['error'] ?? 'Error occurred')),
       );
     }
   }
 
   Widget _buildList(List<dynamic> rows, {bool showCancel = false}) {
-    if (rows.isEmpty) return const Center(child: Text('No bookings here.'));
+    if (rows.isEmpty) {
+      return const Center(
+        child: Text('No bookings here.', style: TextStyle(color: Colors.white)),
+      );
+    }
+
     return ListView.separated(
       padding: const EdgeInsets.all(12),
-      
       itemCount: rows.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (_, i) {
         final r = rows[i] as Map<String, dynamic>;
         final status = (r['status'] ?? '').toString().toLowerCase();
+
         final canCancel = showCancel &&
-            ['pending_booking_payment', 'reserved', 'confirmed', 'pending'].contains(status);
-        
-        // Build subtitle with cancellation reason if applicable
-        String subtitle = 'Slot: ${r['slot_label'] ?? '-'}\nStatus: ${r['status'] ?? '-'}\nFee: ${r['final_fee'] ?? r['booking_fee'] ?? '-'}';
-        if (status == 'cancelled' && r['cancellation_reason'] != null) {
-          subtitle += '\nReason: ${r['cancellation_reason']}';
+            ['pending_booking_payment', 'reserved', 'confirmed', 'pending']
+                .contains(status);
+
+        String subtitle =
+            'Slot: ${r['slot_label'] ?? '-'}\n'
+            'Status: ${formatStatus(r['status'] ?? '-')}\n'
+            'Booking Fee: ₹${r['booking_fee'] ?? '0'}\n'
+            'Final Fee: ₹${r['final_fee'] ?? '0'}';
+
+        // ✅ FIXED HERE (IMPORTANT)
+        if (status == 'completed' || status == 'checked_out') {
+          subtitle +=
+              '\nEntry Time: ${_formatTime(r['checkin_time'])}'
+              '\nExit Time: ${_formatTime(r['checkout_time'])}';
         }
-        
+
+        // ✅ Cancellation reason
+        if (status == 'cancelled') {
+          final reason = r['Reason']?['reason'] ?? r['cancellation_reason'];
+          subtitle +=
+              '\n\n❌ Cancellation Reason:\n'
+              '${reason != null && reason.toString().isNotEmpty ? reason : 'Not provided'}';
+        }
+
         return Card(
+          color: Colors.white.withOpacity(0.95),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: ListTile(
             leading: Icon(
-              status == 'cancelled' ? Icons.cancel_outlined :
-              status == 'checked_out' || status == 'completed' ? Icons.check_circle_outline :
-              Icons.confirmation_number_outlined,
-              color: status == 'cancelled' ? Colors.red :
-                     status == 'checked_out' || status == 'completed' ? Colors.green : null,
+              status == 'cancelled'
+                  ? Icons.cancel
+                  : status == 'completed' || status == 'checked_out'
+                      ? Icons.check_circle
+                      : Icons.local_parking,
+              color: status == 'cancelled'
+                  ? Colors.red
+                  : status == 'completed' || status == 'checked_out'
+                      ? Colors.green
+                      : Colors.blue,
             ),
             title: Text('Reservation: ${r['reservation_id'] ?? '-'}'),
             subtitle: Text(subtitle),
-            isThreeLine: status == 'cancelled' && r['cancellation_reason'] != null,
+            isThreeLine: true,
             trailing: canCancel
                 ? TextButton(
                     onPressed: () => _cancelBooking(r),
-                    style: TextButton.styleFrom(foregroundColor: Colors.red),
-                    child: const Text('Cancel'),
+                    child: const Text('Cancel',
+                        style: TextStyle(color: Colors.red)),
                   )
                 : null,
           ),
@@ -144,67 +206,75 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        title: const Text('My Bookings'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+      ),
       body: Container(
-    decoration: const BoxDecoration(
-      gradient: LinearGradient(
-        colors: [
-          Color(0xFF312E81),
-            // deep navy
-  Color(0xFF1E293B), // smooth transition
-  Color(0xFF0F172A), // subtle purple-blue
-        ],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
-    ),
-    child: Column(
-      children: [
-        TabBar(
-          controller: _tabController,
-          labelColor: Colors.black,
-          unselectedLabelColor: Colors.black54,
-          tabs: _tabs.map((t) => Tab(text: t)).toList(),
-        ),
-      
-          Expanded(
-            child: FutureBuilder<List<dynamic>>(
-              future: _reservationsFuture,
-              
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Padding(
-                      
-                      
-                      padding: const EdgeInsets.all(16),
-                      child: Text('Failed to load bookings: ${snapshot.error}'),
-
-                      
-                    ),
-                  );
-                }
-                final all = snapshot.data ?? <dynamic>[];
-                return RefreshIndicator(
-                  onRefresh: () async => _reload(),
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: _tabs
-                        .map((t) => _buildList(_filter(all, t), showCancel: t == 'Live'))
-                        .toList(),
-                  ),
-                );
-              },
-            ),
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF312E81),
+              Color(0xFF1E293B),
+              Color(0xFF0F172A),
+            ],
           ),
-        ],
+        ),
+        child: Padding(
+          padding: EdgeInsets.only(
+              top: MediaQuery.of(context).padding.top + kToolbarHeight),
+          child: Column(
+            children: [
+              TabBar(
+                controller: _tabController,
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.white70,
+                indicatorColor: Colors.white,
+                tabs: _tabs.map((t) => Tab(text: t)).toList(),
+              ),
+              Expanded(
+                child: FutureBuilder<List<dynamic>>(
+                  future: _reservationsFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState ==
+                        ConnectionState.waiting) {
+                      return const Center(
+                          child: CircularProgressIndicator());
+                    }
+
+                    if (snapshot.hasError) {
+                      return Center(
+                        child: Text(
+                          'Error: ${snapshot.error}',
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      );
+                    }
+
+                    final all = snapshot.data ?? [];
+
+                    return RefreshIndicator(
+                      onRefresh: _reload,
+                      child: TabBarView(
+                        controller: _tabController,
+                        children: _tabs
+                            .map((t) => _buildList(
+                                  _filter(all, t),
+                                  showCancel: t == 'Live',
+                                ))
+                            .toList(),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-    ));
+    );
   }
 }
-
-
-

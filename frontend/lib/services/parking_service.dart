@@ -72,6 +72,15 @@ class ParkingService {
     }
   }
 
+  static Future<List<dynamic>> getPayments() async {
+    try {
+      final response = await ApiService.get('payments/', auth: true);
+      return _normalizeListResponse(response);
+    } catch (e) {
+      throw Exception('Failed to fetch payments: $e');
+    }
+  }
+
   static Future<Map<String, dynamic>> payReservation(int reservationId) async {
     try {
       final response = await ApiService.post('reservations/$reservationId/pay_booking/', auth: true);

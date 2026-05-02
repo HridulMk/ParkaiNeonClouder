@@ -240,6 +240,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                     ),
                   ),
                 ),
+                
                 SliverToBoxAdapter(
                   key: _aiKey,
                   child: _Section(
@@ -265,6 +266,60 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                     ),
                   ),
                 ),
+                SliverToBoxAdapter(
+  child: _Section(
+    title: 'Advanced Features',
+    subtitle: 'Smart automation powered by AI.',
+    child: const Column(
+      children: [
+        _InfoRow(
+          title: 'Auto Booking Cancellation',
+          desc: 'Bookings cancel automatically after 45 minutes if not checked-in.',
+          icon: Icons.timer_off,
+        ),
+        SizedBox(height: 10),
+        _InfoRow(
+          title: 'Slot Prediction',
+          desc: 'AI predicts future parking availability during peak hours.',
+          icon: Icons.insights,
+        ),
+        SizedBox(height: 10),
+        _InfoRow(
+          title: 'Real-time Notifications',
+          desc: 'Get instant alerts for booking, payments and updates.',
+          icon: Icons.notifications,
+        ),
+      ],
+    ),
+  ),
+),
+SliverToBoxAdapter(
+  child: _Section(
+    title: 'For Vendors',
+    subtitle: 'Earn from your unused parking space.',
+    child: const Column(
+      children: [
+        _InfoRow(
+          title: 'Earn Income',
+          desc: 'Monetize unused parking spaces easily.',
+          icon: Icons.attach_money,
+        ),
+        SizedBox(height: 10),
+        _InfoRow(
+          title: 'Manage Slots',
+          desc: 'Control slot availability and pricing.',
+          icon: Icons.dashboard_customize,
+        ),
+        SizedBox(height: 10),
+        _InfoRow(
+          title: 'Analytics Dashboard',
+          desc: 'Track bookings, earnings and performance.',
+          icon: Icons.bar_chart,
+        ),
+      ],
+    ),
+  ),
+),
                 SliverToBoxAdapter(
                   key: _reviewsKey,
                   child: _Section(

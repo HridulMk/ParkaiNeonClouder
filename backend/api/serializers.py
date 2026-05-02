@@ -2,7 +2,7 @@ from decimal import Decimal
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-from .models import CCTVFeed, Gate, ParkingSlot, ParkingSpace, PaymentRecord, Reservation, SystemSetting, User, VehicleLog, Wallet, WalletTransaction, Notification
+from .models import CCTVFeed, Gate, ParkingSlot, ParkingSpace, PaymentRecord, Reservation, SystemSetting, User, VehicleLog, Wallet, WalletTransaction, Notification, FAQ
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -325,7 +325,7 @@ class ReservationSerializer(serializers.ModelSerializer):
             'amount', 'is_paid',
             'total_charged',
             'status', 'qr_code', 'qr_image',
-            'created_at',
+            'created_at',  'cancellation_reason'
         ]
 
     def get_user_full_name(self, obj):
@@ -473,4 +473,10 @@ class NotificationSerializer(serializers.ModelSerializer):
             'is_read',
             'created_at',
         ]
+
+
+class FAQSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FAQ
+        fields = ['id', 'question', 'answer', 'is_active', 'created_at']
 

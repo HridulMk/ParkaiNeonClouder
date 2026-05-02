@@ -14,6 +14,7 @@ router.register(r'gates', views.GateViewSet)
 router.register(r'cctv', views.CCTVFeedViewSet)
 router.register(r'vehicle-logs', views.VehicleLogViewSet)
 router.register(r'payments', views.PaymentRecordViewSet, basename='payments')
+router.register(r'faqs', views.FAQViewSet)
 router.register(r'notifications', views.NotificationViewSet, basename='notifications')
 router.register(r'wallet', views.WalletViewSet, basename='wallet')
 
@@ -83,4 +84,6 @@ urlpatterns = [
     path('analytics/customers/<int:customer_id>/spend/', views.analytics_customer_spend, name='analytics_customer_spend'),
 
     path('vehicle/process-image/', views.VehicleImageProcessEndpoint.as_view(), name='vehicle_process_image'),
+
+    path('chatbot/', views.ChatbotAPIView.as_view(), name='chatbot'),
 ]

@@ -24,7 +24,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 import qrcode
 
-from .models import CCTVFeed, Gate, ParkingSlot, ParkingSpace, PaymentRecord, Reservation, SystemSetting, User, VehicleLog, Wallet, WalletTransaction, Notification
+from .models import CCTVFeed, Gate, ParkingSlot, ParkingSpace, PaymentRecord, Reservation, SystemSetting, User, VehicleLog, Wallet, WalletTransaction, Notification, FAQ
 from .permissions import IsAdminUserType, IsVendorOrAdmin
 from .realtime import notify_slot_update, notify_user
 from .serializers import (
@@ -42,6 +42,7 @@ from .serializers import (
     SystemSettingSerializer,
     VehicleLogSerializer,
     WalletSerializer,
+    FAQSerializer,
 )
 
 # Fallback rates — actual rates are read from ParkingSpace per reservation
@@ -1910,6 +1911,40 @@ class NotificationViewSet(viewsets.ModelViewSet):
         notification.is_read = True
         notification.save(update_fields=['is_read'])
         return Response({'status': 'Notification marked as read'})
+
+
+class FAQViewSet(viewsets.ModelViewSet):
+    queryset = FAQ.objects.filter(is_active=True)
+    serializer_class = FAQSerializer
+    permission_classes = [AllowAny]  # Allow anyone to read FAQs
+
+
+class ChatbotAPIView(APIView):
+    permission_classes = [AllowAny]  # Allow anyone to use chatbot
+
+    def post(self, request):
+        message = request.data.get('message', '').strip()
+        if not message:
+            return Response({'error': 'Message is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Find FAQ that matches the message (case insensitive)
+        faq = FAQ.objects.filter(
+            is_active=True,
+            question__iexact=message
+        ).first()
+
+        if faq:
+            return Response({
+                'type': 'faq',
+                'question': faq.question,
+                'answer': faq.answer
+            })
+        else:
+            return Response({
+                'type': 'contact',
+                'message': "I'm sorry, I couldn't find an answer to your question. Please contact us for more help.",
+                'contact_suggestion': True
+            })
 
 
 

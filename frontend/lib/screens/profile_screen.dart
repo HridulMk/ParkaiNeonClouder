@@ -6,6 +6,10 @@ import '../services/parking_service.dart';
 import 'my_bookings.dart';
 import 'wallet_screen.dart';
 import 'welcome.dart';
+import 'contact_us_screen.dart';
+import 'faq.dart';
+import 'chatbot_screen.dart';
+import 'privacypolicy.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -190,19 +194,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     icon: Icons.headset_mic_outlined,
                     color: const Color(0xFF0EA5E9),
                     label: 'Support',
-                    onTap: () => _showComingSoon('Support'),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ChatbotScreen()),
+                    ),
                   ),
                   _MenuItem(
                     icon: Icons.contact_mail_outlined,
                     color: const Color(0xFF22C55E),
                     label: 'Contact Us',
-                    onTap: () => _showComingSoon('Contact Us'),
+                    onTap: () {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => const ContactUsScreen(),
+    ),
+  );
+},
                   ),
                   _MenuItem(
                     icon: Icons.help_outline,
                     color: const Color(0xFF6366F1),
                     label: 'FAQ',
-                    onTap: () => _showComingSoon('FAQ'),
+                    onTap: () {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => const FAQScreen(),
+    ),
+  );
+},
                   ),
 
                   const SizedBox(height: 12),
@@ -213,7 +234,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     icon: Icons.privacy_tip_outlined,
                     color: const Color(0xFF64748B),
                     label: 'Privacy Policy',
-                    onTap: () => _showComingSoon('Privacy Policy'),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const PrivacyPolicyScreen(),
+                      ),
+                    ),
                   ),
 
                   const SizedBox(height: 20),

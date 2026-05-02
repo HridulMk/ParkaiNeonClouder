@@ -33,12 +33,14 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
       ParkingService.getReservations(),
       ParkingService.getParkingSpaces(),
       ParkingService.getParkingSlots(),
+      ParkingService.getPayments(),
     ]);
 
     final profileResp = results[0] as Map<String, dynamic>;
     final reservations = (results[1] as List<dynamic>).whereType<Map<String, dynamic>>().toList();
     final spaces = (results[2] as List<dynamic>).whereType<Map<String, dynamic>>().toList();
     final slots = results[3] as List<ParkingSlot>;
+    final payments = (results[4] as List<dynamic>).whereType<Map<String, dynamic>>().toList();
 
     Map<String, dynamic> user = {};
     if (profileResp['success'] == true && profileResp['user'] is Map) {
@@ -53,14 +55,9 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
 
     for (final r in reservations) {
       final status = (r['status'] ?? '').toString().toLowerCase();
-      final fee = double.tryParse(
-            (r['final_fee'] ?? r['booking_fee'] ?? '0').toString(),
-          ) ??
-          0;
 
       if (status == 'completed') {
         completed++;
-        totalSpent += fee;
       } else if (status == 'reserved' || status == 'checked_in') {
         active++;
       } else if (status == 'cancelled') {
@@ -69,6 +66,16 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
         pending++;
       }
     }
+
+    // Calculate total spent from payments
+  for (final p in payments) {
+  final type = (p['payment_type'] ?? '').toString();
+
+  if (type == 'booking' || type == 'final') {
+    final amount = double.tryParse((p['amount'] ?? '0').toString()) ?? 0;
+    totalSpent += amount;
+  }
+}
 
     // Nearby spaces with slot info
     final activeSpaces = spaces.where((s) => s['is_active'] == true).toList();
@@ -142,68 +149,86 @@ class _CustomerDashboardScreenState extends State<CustomerDashboardScreen> {
               );
             }
 
-            final d = snap.data!;
-            return RefreshIndicator(
-              onRefresh: () async => _reload(),
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                children: [
-                  // ── Header ──────────────────────────────────────────
-                  Row(
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          'My Dashboard',
-                          style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+final NotificationService _notificationService = NotificationService();
+
+        final d = snap.data!;
+return RefreshIndicator(
+  onRefresh: () async => _reload(),
+  child: ListView(
+    padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+    children: [
+      // ── Header ──────────────────────────────────────────
+      Row(
+        children: [
+          const Expanded(
+            child: Text(
+              'My Dashboard',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
+            ),
+          ),
+          IconButton(onPressed: _reload, icon: const Icon(Icons.refresh)),
+
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_outlined, color: Color(0xFF0D9488)),
+                onPressed: () {
+                  print("Notification clicked"); // debug
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => const NotificationsScreen(),
+    ),
+                  );
+                },
+              ),
+
+              Positioned(
+                right: 8,
+                top: 8,
+                child: AnimatedBuilder(
+                  animation: _notificationService, // ✅ fixed
+                  builder: (context, _) {
+                    final count = _notificationService.unreadCount; // ✅ fixed
+                    if (count == 0) return const SizedBox.shrink();
+
+                    return Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        count > 9 ? '9+' : '$count',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      IconButton(onPressed: _reload, icon: const Icon(Icons.refresh)),
-                      Stack(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.notifications_outlined, color: Color(0xFF0D9488)),
-                            onPressed: () {
-                              Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NotificationsScreen()));
-                            },
-                          ),
-                          Positioned(
-                            right: 8,
-                            top: 8,
-                            child: AnimatedBuilder(
-                              animation: NotificationService(),
-                              builder: (context, _) {
-                                final count = NotificationService().unreadCount;
-                                if (count == 0) return const SizedBox.shrink();
-                                return Container(
-                                  padding: const EdgeInsets.all(4),
-                                  decoration: const BoxDecoration(
-                                    color: Colors.red,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Text(
-                                    count > 9 ? '9+' : '$count',
-                                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.logout, color: Colors.red),
-                        onPressed: () async {
-                          await AuthService.logout();
-                          if (!context.mounted) return;
-                          Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(builder: (_) => const WelcomeScreen()),
-                            (r) => false,
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.red),
+            onPressed: () async {
+              await AuthService.logout();
+              if (!context.mounted) return;
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+                (r) => false,
+              );
+            },
+          ),
+        ],
+      ),
+
+      const SizedBox(height: 10),
+    
 
                   // ── Profile Card ─────────────────────────────────────
                   _ProfileCard(user: d.user, name: _name(d.user)),
